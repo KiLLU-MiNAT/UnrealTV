@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UnrealTV</title>
+  <meta name="description" content="UnrealTV – Netflix-inspirierte Streaming-Oberfläche für Live TV, Serien und Filme mit M3U/EPG-Unterstützung." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="background-glow"></div>
+
+  <section id="loginScreen" class="login-screen active">
+    <header class="login-brand"><img src="assets/logo.png" alt="UnrealTV" onerror="this.style.display='none';this.parentNode.appendChild(document.createTextNode('UNREALTV'))"></header>
+    <div class="login-center">
+      <h1>Wer schaut gerade?</h1>
+      <div id="profileGrid" class="profile-grid"></div>
+      <button id="logoutAllBtn" class="ghost-btn small hidden">Gespeicherten Login löschen</button>
+    </div>
+
+    <div id="passwordOverlay" class="password-overlay hidden" aria-hidden="true">
+      <div class="password-card">
+        <button id="closePasswordOverlay" class="close-btn" aria-label="Schließen">×</button>
+        <div class="password-profile">
+          <img id="selectedProfileAvatar" src="" alt="Ausgewähltes Profil" />
+          <div>
+            <p>Profil gewählt</p>
+            <h2 id="selectedProfileName">Admin</h2>
+          </div>
+        </div>
+        <label for="passwordInput">Passwort</label>
+        <input id="passwordInput" type="password" placeholder="Passwort eingeben" autocomplete="current-password" />
+        <button id="enterAppBtn" class="primary-btn">UnrealTV öffnen</button>
+        <p id="loginMessage" class="login-message"></p>
+      </div>
+    </div>
+  </section>
+
+  <main id="appScreen" class="app-shell hidden">
+    <header class="topbar">
+      <div class="topbar-left">
+        <a href="#" class="brand"><img src="assets/logo.png" alt="UnrealTV" onerror="this.style.display='none';this.parentNode.appendChild(document.createTextNode('UNREALTV'))"></a>
+        <nav class="nav-links" aria-label="Hauptnavigation">
+          <button class="nav-link active" data-view="home">Home</button>
+          <button class="nav-link" data-view="live">Live TV</button>
+          <button class="nav-link" data-view="series">Serien</button>
+          <button class="nav-link" data-view="movies">Filme</button>
+          <button class="nav-link" data-view="mylist">Meine Liste</button>
+        </nav>
+      </div>
+      <div class="topbar-right">
+        <button id="searchToggle" class="icon-btn" aria-label="Suche öffnen">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+        </button>
+        <button id="configToggle" class="icon-btn" aria-label="Import öffnen">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4"></path><path d="M12 18v4"></path><path d="M4.93 4.93l2.83 2.83"></path><path d="M16.24 16.24l2.83 2.83"></path><path d="M2 12h4"></path><path d="M18 12h4"></path><path d="M4.93 19.07l2.83-2.83"></path><path d="M16.24 7.76l2.83-2.83"></path><circle cx="12" cy="12" r="3"></circle></svg>
+        </button>
+        <button id="profileMenuBtn" class="profile-mini" aria-label="Profilmenü öffnen">
+          <img id="activeProfileAvatar" src="" alt="Aktives Profil" />
+          <span id="activeProfileName">Admin</span>
+        </button>
+      </div>
+    </header>
+
+    <div id="searchBar" class="search-bar hidden">
+      <input id="globalSearchInput" type="search" placeholder="Suche nach Sendern, Filmen oder Serien..." />
+    </div>
+
+    <section id="heroSection" class="hero-section"></section>
+
+    <section id="homeView" class="view active"></section>
+
+    <section id="liveView" class="view hidden">
+      <div class="section-header">
+        <div>
+          <p class="eyebrow">Live TV</p>
+          <h2>Sender, Streams &amp; EPG</h2>
+        </div>
+      </div>
+
+      <div class="live-layout">
+        <div class="player-panel">
+          <div id="livePlayerHost" class="video-wrap">
+            <video id="livePlayer" controls playsinline poster="assets/live-poster.svg"></video>
+          </div>
+          <div class="player-meta">
+            <div>
+              <h3 id="liveChannelTitle">UnrealTV Demo Channel</h3>
+              <p id="liveChannelGroup">Kategorie: Entertainment</p>
+            </div>
+            <div class="player-badges">
+              <span class="badge live">LIVE</span>
+              <span class="badge" id="liveChannelNow">Jetzt: Demo EPG</span>
+            </div>
+          </div>
+          <div id="liveSourceSwitcher" class="source-switcher hidden">
+            <div class="source-switcher-head">
+              <p class="eyebrow">Streamquellen</p>
+              <span id="liveSourceLabel" class="source-current-label">Keine Streamquelle gewählt</span>
+            </div>
+            <div id="liveSourceButtons" class="source-chip-row"></div>
+          </div>
+          <div id="epgNowNext" class="epg-now-next"></div>
+
+          <section class="chat-panel live-chat-panel">
+            <div class="chat-panel-head">
+              <div>
+                <p class="eyebrow">Community</p>
+                <h3>Live Chat</h3>
+              </div>
+              <span id="liveChatRoomLabel" class="badge">Raum: live-default</span>
+            </div>
+            <div id="liveChatStatus" class="chat-status info">Chat lädt …</div>
+            <div id="liveChatMessages" class="chat-messages"></div>
+            <form id="liveChatForm" class="chat-form">
+              <input id="liveChatInput" type="text" maxlength="240" placeholder="Schreibe eine Nachricht zum aktuellen Stream …" />
+              <button type="submit" class="primary-btn">Senden</button>
+            </form>
+          </section>
+        </div>
+
+        <aside class="channel-sidebar">
+          <div class="sidebar-head">
+            <h3>Senderliste</h3>
+            <span id="channelCount">0 Sender</span>
+          </div>
+          <div id="channelList" class="channel-list"></div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="seriesView" class="view hidden">
+      <div class="section-header"><div><p class="eyebrow">Serien</p><h2>Serien-Bibliothek</h2></div></div>
+      <div id="seriesGrid" class="catalog-grid"></div>
+    </section>
+
+    <section id="moviesView" class="view hidden">
+      <div class="section-header"><div><p class="eyebrow">Filme</p><h2>Film-Bibliothek</h2></div></div>
+      <div id="moviesGrid" class="catalog-grid"></div>
+    </section>
+
+    <section id="mylistView" class="view hidden">
+      <div class="section-header"><div><p class="eyebrow">Meine Liste</p><h2>Gespeicherte Titel</h2></div></div>
+      <div id="myListGrid" class="catalog-grid"></div>
+    </section>
+  </main>
+
+  <div id="detailsModal" class="details-modal hidden" aria-hidden="true" data-version="v6">
+    <div class="details-card">
+      <button id="closeDetailsModal" class="close-btn" aria-label="Details schließen">×</button>
+      <div id="detailsBackdrop" class="details-backdrop"></div>
+      <div class="details-content details-grid">
+        <div class="details-main">
+          <div class="details-info-layout">
+            <div class="details-poster-wrap">
+              <img id="detailsPoster" class="details-poster" src="" alt="Poster" />
+            </div>
+            <div class="details-copy">
+              <p id="detailsType" class="eyebrow"></p>
+              <h2 id="detailsTitle"></h2>
+              <div id="detailsMeta" class="details-meta"></div>
+              <p id="detailsDescription" class="details-description"></p>
+              <div id="detailsTags" class="details-tags"></div>
+              <div class="details-actions">
+                <button id="detailsPlayBtn" class="primary-btn">Abspielen</button>
+                <button id="detailsEpisodesBtn" class="ghost-btn hidden">▼ Episoden</button>
+                <button id="detailsSaveBtn" class="ghost-btn">Zu meiner Liste</button>
+              </div>
+            </div>
+          </div>
+          <div id="detailsPlayerWrap" class="details-player-wrap hidden">
+            <video id="detailsPlayer" controls playsinline></video>
+          </div>
+        </div>
+
+        <aside class="chat-panel details-chat-panel">
+          <div class="chat-panel-head">
+            <div>
+              <p class="eyebrow">Community</p>
+              <h3>Titel-Chat</h3>
+            </div>
+            <span id="detailsChatRoomLabel" class="badge">Raum: —</span>
+          </div>
+          <div id="detailsChatStatus" class="chat-status info">Öffne einen Titel, um den Chat zu sehen.</div>
+          <div id="detailsChatMessages" class="chat-messages compact"></div>
+          <form id="detailsChatForm" class="chat-form">
+            <input id="detailsChatInput" type="text" maxlength="240" placeholder="Schreibe eine Nachricht zu diesem Film oder dieser Serie …" />
+            <button type="submit" class="primary-btn">Senden</button>
+          </form>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <div id="configDrawer" class="config-drawer hidden" aria-hidden="true">
+    <div class="config-card">
+      <div class="config-header">
+        <div>
+          <h3>Listen importieren</h3>
+          <p class="config-text compact">Lade M3U-Dateien oder M3U-Links für Live TV, Filme und Serien hoch. EPG/XMLTV wird separat auf Live-TV-Sender gemappt.</p>
+        </div>
+        <button id="closeConfigDrawer" class="close-btn" aria-label="Import schließen">×</button>
+      </div>
+
+      <div class="import-overview">
+        <div class="import-stat"><span>Live TV</span><strong id="liveImportCount">0</strong></div>
+        <div class="import-stat"><span>Filme</span><strong id="movieImportCount">0</strong></div>
+        <div class="import-stat"><span>Serien</span><strong id="seriesImportCount">0</strong></div>
+      </div>
+
+      <div id="importStatus" class="import-status info">Du kannst lokale Dateien hochladen oder eine M3U/XML-URL laden.</div>
+
+      <div class="config-grid advanced">
+        <div class="config-box tall">
+          <div class="config-box-head">
+            <h4>Live TV</h4>
+            <p>M3U-Liste für Sender und Streams</p>
+          </div>
+          <label for="m3uUrlInput">M3U / M3U8 URL</label>
+          <input id="m3uUrlInput" type="url" placeholder="https://example.com/live.m3u" />
+          <button id="loadM3uUrlBtn" class="ghost-btn">Live-TV URL laden</button>
+          <label for="m3uFileInput">Lokale M3U/M3U8 Datei</label>
+          <input id="m3uFileInput" type="file" accept=".m3u,.m3u8,text/plain,application/x-mpegURL,audio/x-mpegurl" />
+        </div>
+
+        <div class="config-box tall">
+          <div class="config-box-head">
+            <h4>EPG / XMLTV</h4>
+            <p>TV-Programm für Live-TV-Sender</p>
+          </div>
+          <label for="epgUrlInput">EPG / XMLTV URL</label>
+          <input id="epgUrlInput" type="url" placeholder="https://example.com/epg.xml" />
+          <button id="loadEpgUrlBtn" class="ghost-btn">EPG URL laden</button>
+          <label for="epgFileInput">Lokale XML/EPG Datei</label>
+          <input id="epgFileInput" type="file" accept=".xml,.xmltv,text/xml,application/xml" />
+        </div>
+
+        <div class="config-box tall">
+          <div class="config-box-head">
+            <h4>Filme</h4>
+            <p>M3U-Liste für Film-Einträge</p>
+          </div>
+          <label for="moviesUrlInput">Filme M3U URL</label>
+          <input id="moviesUrlInput" type="url" placeholder="https://example.com/movies.m3u" />
+          <button id="loadMoviesUrlBtn" class="ghost-btn">Filme URL laden</button>
+          <label for="moviesFileInput">Filme M3U Datei</label>
+          <input id="moviesFileInput" type="file" accept=".m3u,.m3u8,text/plain,application/x-mpegURL,audio/x-mpegurl" />
+        </div>
+
+        <div class="config-box tall">
+          <div class="config-box-head">
+            <h4>Serien</h4>
+            <p>M3U-Liste für Serien-Einträge</p>
+          </div>
+          <label for="seriesUrlInput">Serien M3U URL</label>
+          <input id="seriesUrlInput" type="url" placeholder="https://example.com/series.m3u" />
+          <button id="loadSeriesUrlBtn" class="ghost-btn">Serien URL laden</button>
+          <label for="seriesFileInput">Serien M3U Datei</label>
+          <input id="seriesFileInput" type="file" accept=".m3u,.m3u8,text/plain,application/x-mpegURL,audio/x-mpegurl" />
+        </div>
+      </div>
+
+      <div class="config-actions">
+        <button id="resetLibraryBtn" class="ghost-btn">Alle importierten Listen zurücksetzen</button>
+      </div>
+
+      
+      <div class="config-box firebase-box">
+        <div class="config-box-head">
+          <h4>Realtime Chat / Firebase</h4>
+          <p>Der Chat funktioniert sofort lokal im Demo-Modus. Für echten Live-Chat zwischen allen Nutzern kopierst du später deine Firebase-Daten in <code>firebase-config.js</code>.</p>
+        </div>
+        <div class="firebase-help">
+          <span class="badge">Datei: firebase-config.example.js</span>
+          <span class="badge">Collection: unrealtv_chat_rooms</span>
+        </div>
+      </div>
+
+<div class="config-footnote">
+        <strong>Hinweis:</strong> Für die beste automatische Erkennung sollten deine M3U-Einträge zusätzliche Attribute wie <code>tvg-id</code>, <code>tvg-logo</code>, <code>group-title</code>, <code>plot</code>, <code>year</code>, <code>quality</code> oder <code>rating</code> enthalten. Ohne diese Werte werden sinnvolle Platzhalter verwendet.
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script><div id="episodesModal" class="episodes-modal hidden" aria-hidden="true">
+    <div class="episodes-card">
+      <button id="closeEpisodesModal" class="close-btn" aria-label="Episoden schließen">×</button>
+      <div class="episodes-head">
+        <div>
+          <p class="eyebrow">Episodes</p>
+          <h2 id="episodesSeriesTitle">Serie</h2>
+        </div>
+        <select id="episodesSeasonSelect" class="season-select"></select>
+      </div>
+      <div id="episodesList" class="episodes-list"></div>
+    </div>
+  </div>
+
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="data/data.js"></script>
+  <script src="app.js"></script>
+
+  
+<!-- v9 episodes fix -->
+</body>

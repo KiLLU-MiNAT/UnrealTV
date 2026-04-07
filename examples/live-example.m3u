@@ -1,0 +1,5 @@
+#EXTM3U
+#EXTINF:-1 tvg-id="demo.live.one" tvg-logo="https://dummyimage.com/300x300/111/ffffff&text=LIVE+1" group-title="News",Demo News HD
+https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8
+#EXTINF:-1 tvg-id="demo.live.two" tvg-logo="https://dummyimage.com/300x300/222/ffffff&text=SPORT" group-title="Sport",Demo Sport
+https://test-streams.mux.dev/test_001/stream.m3u8

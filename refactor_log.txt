@@ -1,0 +1,7 @@
+Moved arrays:
+No arrays auto-detected.
+
+Found candidates:
+{
+  "found_names": []
+}

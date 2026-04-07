@@ -1,0 +1,5 @@
+#EXTM3U
+#EXTINF:-1 tvg-logo="https://dummyimage.com/1280x720/111/ffffff&text=FILM+1" group-title="Action|Sci-Fi" plot="Importierter Beispiel-Film aus einer M3U-Liste." year="2026" quality="4K" rating="16+" duration="2h 01m",Skyline Protocol
+https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8
+#EXTINF:-1 tvg-logo="https://dummyimage.com/1280x720/222/ffffff&text=FILM+2" group-title="Drama" plot="Noch ein Filmbeispiel." year="2025" quality="HD" rating="12+" duration="1h 44m",Echoes of Tomorrow
+https://test-streams.mux.dev/test_001/stream.m3u8

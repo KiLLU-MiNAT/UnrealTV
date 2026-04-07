@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tv>
+  <programme start="20260407180000 +0000" stop="20260407190000 +0000" channel="demo.live.one">
+    <title>Abend Nachrichten</title>
+  </programme>
+  <programme start="20260407190000 +0000" stop="20260407203000 +0000" channel="demo.live.one">
+    <title>Politik Spezial</title>
+  </programme>
+  <programme start="20260407203000 +0000" stop="20260407220000 +0000" channel="demo.live.one">
+    <title>Night Update</title>
+  </programme>
+  <programme start="20260407180000 +0000" stop="20260407193000 +0000" channel="demo.live.two">
+    <title>Live Stadion</title>
+  </programme>
+  <programme start="20260407193000 +0000" stop="20260407210000 +0000" channel="demo.live.two">
+    <title>Analyse Extra</title>
+  </programme>
+  <programme start="20260407210000 +0000" stop="20260407230000 +0000" channel="demo.live.two">
+    <title>Highlights</title>
+  </programme>
+</tv>

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900">
+<defs>
+<linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#231f20"/><stop offset="1" stop-color="#4a2c2a"/></linearGradient>
+<radialGradient id="r" cx="80%" cy="20%" r="60%"><stop stop-color="rgba(255,255,255,.18)"/><stop offset="1" stop-color="rgba(255,255,255,0)"/></radialGradient>
+</defs>
+<rect width="1600" height="900" fill="url(#g)"/>
+<rect width="1600" height="900" fill="url(#r)"/>
+<circle cx="1230" cy="220" r="170" fill="rgba(255,255,255,.08)"/>
+<rect x="80" y="90" width="530" height="720" rx="42" fill="rgba(0,0,0,.18)"/>
+<text x="120" y="270" font-family="Inter,Arial" font-size="118" font-weight="800" fill="white">Iron District</text>
+<text x="122" y="340" font-family="Inter,Arial" font-size="42" font-weight="500" fill="rgba(255,255,255,.8)">Urban Crime</text>
+<path d="M870 690c120-180 214-286 355-398 66-52 152-67 212-54-64 22-129 76-159 119 86 9 153 61 177 123-39-25-95-39-151-32 34 63 37 134 6 202-53-72-133-110-236-106-59 2-128 27-204 74z" fill="rgba(255,255,255,.13)"/>
+<rect x="120" y="640" width="250" height="70" rx="35" fill="rgba(255,255,255,.1)"/>
+<text x="245" y="685" text-anchor="middle" font-family="Inter,Arial" font-size="30" font-weight="700" fill="white">PLACEHOLDER</text>
+</svg>

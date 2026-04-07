@@ -1,0 +1,20 @@
+EMBED STREAM SUPPORT:
+Du kannst jetzt bei Live-TV-Sendern zusätzlich eines dieser Felder verwenden:
+- embedCode: '<iframe src="https://example.com/player.php" width="100%" height="100%" style="border:0;" allowfullscreen></iframe>'
+- embed: 'https://example.com/player.php'
+
+Beispiel in data/data.js:
+
+{
+  id: 'ch-custom-embed',
+  name: 'Mein Embed Stream',
+  group: 'Entertainment',
+  logo: 'EMB',
+  logoUrl: '',
+  embedCode: '<iframe src="https://dlstreams.top/stream/stream-426.php" width="100%" height="100%" style="border:0;" allowfullscreen></iframe>',
+  epg: [
+    { start: '18:00', end: '19:00', title: 'Live Stream' }
+  ]
+}
+
+Normale streamUrl-Sender funktionieren weiterhin unverändert.

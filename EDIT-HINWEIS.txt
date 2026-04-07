@@ -1,0 +1,2 @@
+Platzhalterdaten wurden aus app.js in data/data.js verschoben.
+Bereich: UNREAL_PLACEHOLDER_DATA
