@@ -166,11 +166,13 @@
 
     <section id="seriesView" class="view hidden">
       <div class="section-header"><div><p class="eyebrow">Serien</p><h2>Serien-Bibliothek</h2></div></div>
+      <div id="seriesMobileShelves" class="mobile-genre-shelves"></div>
       <div id="seriesGrid" class="catalog-grid"></div>
     </section>
 
     <section id="moviesView" class="view hidden">
       <div class="section-header"><div><p class="eyebrow">Filme</p><h2>Film-Bibliothek</h2></div></div>
+      <div id="moviesMobileShelves" class="mobile-genre-shelves"></div>
       <div id="moviesGrid" class="catalog-grid"></div>
     </section>
 
@@ -207,6 +209,13 @@
             <div id="detailsPlayerHost" class="details-video-host">
               <video id="detailsPlayer" controls playsinline></video>
             </div>
+          </div>
+          <div id="detailsSourceSwitcher" class="source-switcher hidden">
+            <div class="source-switcher-head">
+              <p class="eyebrow">Streamquellen</p>
+              <span id="detailsSourceLabel" class="source-current-label">Keine Streamquelle gewählt</span>
+            </div>
+            <div id="detailsSourceButtons" class="source-chip-row"></div>
           </div>
         </div>
 
@@ -334,6 +343,7 @@
       <div class="admin-tabs" role="tablist" aria-label="Admin Bereiche">
         <button class="admin-tab active" data-admin-tab="overview" type="button">Übersicht</button>
         <button class="admin-tab" data-admin-tab="quickaccess" type="button">Startseite</button>
+        <button class="admin-tab" data-admin-tab="slideshow" type="button">Slideshow</button>
         <button class="admin-tab" data-admin-tab="content" type="button">Inhalte</button>
         <button class="admin-tab" data-admin-tab="streams" type="button">Streams</button>
         <button class="admin-tab" data-admin-tab="texts" type="button">Texte</button>
@@ -359,6 +369,18 @@
     </div>
   </div>
 
+  <div id="genreBrowserModal" class="genre-browser-modal hidden" aria-hidden="true">
+    <div class="genre-browser-card">
+      <button id="closeGenreBrowserModal" class="close-btn" aria-label="Genre-Ansicht schließen">×</button>
+      <div class="genre-browser-head">
+        <div>
+          <p id="genreBrowserType" class="eyebrow">Filme</p>
+          <h2 id="genreBrowserTitle">Genre</h2>
+        </div>
+      </div>
+      <div id="genreBrowserGrid" class="genre-browser-grid"></div>
+    </div>
+  </div>
 
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
