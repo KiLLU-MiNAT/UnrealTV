@@ -1,11 +1,12 @@
 window.UNREAL_DATA = {
   accounts: [
-    { username: 'Admin', password: '63450', avatar: 'assets/avatar-admin.svg', color: '#d62828' },
+    { username: 'Admin', password: '555', avatar: 'assets/avatar-admin.svg', color: '#d62828' },
+    { username: 'Volkan', password: '63450', avatar: 'assets/avatar-volkan.svg', color: '#f4a261' },
     { username: 'Amur', password: '63450', avatar: 'assets/avatar-amur.svg', color: '#2a9d8f' },
     { username: 'Aviano', password: '63450', avatar: 'assets/avatar-aviano.svg', color: '#577590' },
     { username: 'Alessia', password: '63450', avatar: 'assets/avatar-alessia.svg', color: '#b5179e' },
-    { username: 'Volkan', password: '63450', avatar: 'assets/avatar-volkan.svg', color: '#f4a261' },
-    { username: 'Mano', password: '63450', avatar: 'assets/avatar-mano.svg', color: '#6a4c93' }
+    { username: 'Gesu', password: '1402', avatar: 'assets/avatar-gesu.png', color: '#fc2be4' }
+    { username: 'Mano', password: 'Anissa100', avatar: 'assets/avatar-mano.svg', color: '#6a4c93' }
   ],
 
     // =========================================================
@@ -34,7 +35,7 @@ window.UNREAL_DATA = {
       group: 'Entertainment',
       logo: 'DAS',
       logoUrl: 'https://epg.pw/media/images/epg/2025/04/08/20250408022937912681_77.png',
-      streamUrl: 'https://s6.hopslan.com/ardX/tracks-v1a1/mono.m3u8',
+      streamUrl: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8',
       epg: [
         { start: '18:00', end: '19:30', title: 'Evening Showcase' },
         { start: '19:30', end: '21:00', title: 'Action Night Special' },
@@ -546,50 +547,128 @@ movies: [
     // SERIEN / SERIES
     // =========================================================
   series: [
+{
+  id: 'series-1',
+  type: 'Serie',
+  title: 'Messiah',
+  year: 2020,
+  seasons: 1,
+  episodes: 10,
+  rating: '12+',
+  quality: '4K',
+  genre: ['Drama', 'Action'],
+  description: 'In „Messiah - Die sieben Zeichen“ taucht ein Mann auf, der eine Schar von Menschen auf seine Seite zieht. Sie alle verbreiten ihre Überzeugung: Er ist der Messias! Handelt es sich tatsächlich um einen Gottgesandten oder doch eher um einen Betrüger, der die geopolitische Weltordnung durcheinanderbringen möchte? Wie reagiert die Gesellschaft auf den vermeintlichen Messias? Wie gehen die Medien mit den Behauptungen um? Was, wenn sie wahr sind?.',
+  backdrop: 'https://etosmedia.de/wp-content/uploads/2020/06/netflix-700x.jpg',
+  logo: 'http://186.2.175.5/media/images/channel/desktop/messiah-2p8b0u14?format=avif',
+  streamUrl: 'https://ugc-cdn-caching-n3wkgtlrbhjc1mxcjt.cloudwindow-route.com/engine/hls2/01/00169/wsx8ufqfdcl4_,n,.urlset/index-v1-a1.m3u8?t=sYhOMFEiuHQusy9w16oMOkNQWal_iJuxe0U-fe8QgsI&s=1775612178&e=14400&f=4397488&node=bAtMdGZGqUDwL5VVe4d0gdh3Sp+fJM1VA67mUn2vrz0=&i=92.208&sp=2500&asn=3209&q=n&rq=PNs6ffWhp28iyMoApkPANZYIHnkjTEFrXkoHaT72',
+
+  seasonData: [
     {
-      id: 'series-1',
-      type: 'Serie',
-      title: 'Neon District',
-      year: 2026,
-      seasons: 2,
-      episodes: 16,
-      rating: '16+',
-      quality: '4K',
-      genre: ['Cyberpunk', 'Action'],
-      description: 'Platzhalter-Serie mit Metadaten, Tags und Detailansicht. Ideal, um später Staffeln, Episoden und externe Streams einzubinden.',
-      backdrop: 'assets/series-1.svg',
-      logo: 'assets/series-1.svg',
-      streamUrl: ''
-    },
+      season: 1,
+      episodes: [
+        {
+          title: 'Messiah – Episode 1',
+          description: 'Staffel 1, Folge 1',
+          duration: '24m',
+          thumbnail: 'https://m.media-amazon.com/images/M/MV5BNDg5YjllYTQtZWY0NC00MmY4LThmMGItMTJjZTY3YjY5NjQ1XkEyXkFqcGc@._V1_QL75_UY563_CR72,0,1000,563_.jpg',
+          streamUrl: 'https://ugc-cdn-caching-n3wkgtlrbhjc1mxcjt.cloudwindow-route.com/engine/hls2/01/00169/wsx8ufqfdcl4_,n,.urlset/index-v1-a1.m3u8?t=sYhOMFEiuHQusy9w16oMOkNQWal_iJuxe0U-fe8QgsI&s=1775612178&e=14400&f=4397488&node=bAtMdGZGqUDwL5VVe4d0gdh3Sp+fJM1VA67mUn2vrz0=&i=92.208&sp=2500&asn=3209&q=n&rq=PNs6ffWhp28iyMoApkPANZYIHnkjTEFrXkoHaT72'
+        },
+        {
+          title: 'Messiah – Episode 2',
+          description: 'Staffel 1, Folge 2',
+          duration: '24m',
+          thumbnail: 'https://m.media-amazon.com/images/M/MV5BOTllZDA3OWYtNWQ1Yi00OGY3LTgxY2QtODMxZGM5MDhmOGExXkEyXkFqcGc@._V1_QL75_UY563_CR67,0,1000,563_.jpg',
+          streamUrl: 'https://ugc-cdn-caching-n3cpjlg1yzjzxk8qnq.cloudwindow-route.com/engine/hls2/01/00169/mcvwfffo1v7t_,n,.urlset/index-v1-a1.m3u8?t=3VDZq684Ad8Nmk_psjFgMu2hwrJzXvw0uPtpgvKj5jk&s=1775612208&e=14400&f=4397486&node=YM8ryRuslUo6jpp1CYW90UlU2A0JmuKOHWDGl2tyb2U=&i=92.208&sp=2500&asn=3209&q=n&rq=PNs6ffWhp28iyMoApkPANZYIHnkjTEFrXkoHaT72'
+        },
+        {
+          title: 'Messiah – Episode 3',
+          description: 'Staffel 1, Folge 3',
+          duration: '24m',
+          thumbnail: 'https://m.media-amazon.com/images/M/MV5BNjdmZmVmMzUtNjc2MS00YWZkLTg4MDctYjM5NGIzMzM0MGJjXkEyXkFqcGc@._V1_QL75_UY563_CR72,0,1000,563_.jpg',
+          streamUrl: 'https://ugc-cdn-caching-n3s9axncnqpmolwhjf.cloudwindow-route.com/engine/hls2/01/00169/82py6yskzs0i_,n,.urlset/index-v1-a1.m3u8?t=tFJC2YS3bCY8T0oZ0Vf6JcFeNllAvFGByfr8--6qA1s&s=1775612222&e=14400&f=4397492&node=BCeQachLSBhn9CjtJ8a5NmjiOwQOySRQZJFN9sWfb0k=&i=92.208&sp=2500&asn=3209&q=n&rq=PNs6ffWhp28iyMoApkPANZYIHnkjTEFrXkoHaT72'
+        },
+        {
+          title: 'Messiah – Episode 4',
+          description: 'Staffel 1, Folge 4',
+          duration: '24m',
+          thumbnail: 'https://m.media-amazon.com/images/M/MV5BZDJhYzk3MjctMGZiMC00OGIyLWJlN2YtMjJiMDQyYzRkODkxXkEyXkFqcGc@._V1_QL75_UY563_CR1,0,1000,563_.jpg',
+          streamUrl: 'https://ugc-cdn-caching-n37iwvgty8fuaq18it.cloudwindow-route.com/engine/hls2/01/00169/wz72qpvfbm5r_,n,.urlset/index-v1-a1.m3u8?t=HHA8nNgqyYudjMLYqR763s4DF7FEWbD2uufBCRuxYuE&s=1775612266&e=14400&f=4397491&node=Wa7JgGxtft18u0Nam640/D9VTrZiKv11TFM8tS0Z2iw=&i=92.208&sp=2500&asn=3209&q=n&rq=PNs6ffWhp28iyMoApkPANZYIHnkjTEFrXkoHaT72'
+        },
+        {
+          title: 'Messiah – Episode 5',
+          description: 'Staffel 1, Folge 5',
+          duration: '24m',
+          thumbnail: 'https://m.media-amazon.com/images/M/MV5BOGUxYTY3NzgtY2M0My00ZjVlLWI4NzktYTQ1YjNlNjNiMGM0XkEyXkFqcGc@._V1_QL75_UY563_CR61,0,1000,563_.jpg',
+          streamUrl: 'https://ugc-cdn-caching-n3mu6fsuds3zuz3fgi.cloudwindow-route.com/engine/hls2/01/00169/nfa44u04qa01_,n,.urlset/index-v1-a1.m3u8?t=ix3SB_byXkyaPq5FqMeDlkmphpwvo5BfiVm00w_QIsU&s=1775612278&e=14400&f=4397498&node=vuFLRSYjrRRq/YGQUC8lKJ7J/rNptrhb08gIC4qNiVg=&i=92.208&sp=2500&asn=3209&q=n&rq=PNs6ffWhp28iyMoApkPANZYIHnkjTEFrXkoHaT72'
+        },
+        {
+          title: 'Messiah – Episode 6',
+          description: 'Staffel 1, Folge 6',
+          duration: '24m',
+          thumbnail: 'https://m.media-amazon.com/images/M/MV5BNjQ5ZWIxMjYtMGYxOC00ODU5LWJlNmMtMTUzYTZiOGYzYjFkXkEyXkFqcGc@._V1_QL75_UY563_CR66,0,1000,563_.jpg',
+          streamUrl: 'https://ugc-cdn-caching-n3s9axncnqpmolwhjf.cloudwindow-route.com/engine/hls2/01/00169/stgpblng3bbh_,n,.urlset/index-v1-a1.m3u8?t=QkhoyA5YPBSq3gkq4Hb-F6J_WIp0lsGGNSgit7OFjqA&s=1775612291&e=14400&f=4397499&node=BCeQachLSBhn9CjtJ8a5NmjiOwQOySRQZJFN9sWfb0k=&i=92.208&sp=2500&asn=3209&q=n&rq=PNs6ffWhp28iyMoApkPANZYIHnkjTEFrXkoHaT72'
+        },
+        {
+          title: 'Messiah – Episode 7',
+          description: 'Staffel 1, Folge 7',
+          duration: '24m',
+          thumbnail: 'https://m.media-amazon.com/images/M/MV5BNjE3ZjAwMDQtYTRiNy00YzVhLWJkMDktOThiNWMyNjA5ODA2XkEyXkFqcGc@._V1_QL75_UY563_CR64,0,1000,563_.jpg',
+          streamUrl: 'https://ugc-cdn-caching-n3lkvxgheee2fzfh03.cloudwindow-route.com/engine/hls2/01/00169/6i71cwq4evxz_,n,.urlset/index-v1-a1.m3u8?t=IsIvoq8ZyXNnEbVOgd7Jcdi07cEKLNPbUdr8RJGEmng&s=1775612306&e=14400&f=4397501&node=n8EHxmjUCaQI0GMbkyuEnOHLVaFEQYXrRRHc++IWY5Q=&i=92.208&sp=2500&asn=3209&q=n&rq=PNs6ffWhp28iyMoApkPANZYIHnkjTEFrXkoHaT72'
+        },
+        {
+          title: 'Messiah – Episode 8',
+          description: 'Staffel 1, Folge 8',
+          duration: '24m',
+          thumbnail: 'https://m.media-amazon.com/images/M/MV5BNWQ3NGNmYTUtYmE1OC00MDNhLTg5NmUtNDQ0ZjNmYTY4YzM4XkEyXkFqcGc@._V1_QL75_UY563_CR52,0,1000,563_.jpg',
+          streamUrl: 'https://ugc-cdn-caching-n3z2a1mubxmjkn3ttc.cloudwindow-route.com/engine/hls2/01/00169/we427hbdc7h4_,n,.urlset/index-v1-a1.m3u8?t=xxCzBj9z71NCV5MXKoJwgGEtiYhth6f3SuZ2XepDxY0&s=1775612321&e=14400&f=4397497&node=ZRZ0K3iT4dJ85562a73rCEzGUukeH4sE88b4z/MvRGc=&i=92.208&sp=2500&asn=3209&q=n&rq=PNs6ffWhp28iyMoApkPANZYIHnkjTEFrXkoHaT72'
+        },
+        {
+          title: 'Messiah – Episode 9',
+          description: 'Staffel 1, Folge 9',
+          duration: '24m',
+          thumbnail: 'https://m.media-amazon.com/images/M/MV5BMTE1ZjQxZWEtZTdiNi00NmM2LWE4MTUtMTJiZDI2Y2I3OTMxXkEyXkFqcGc@._V1_QL75_UY563_CR62,0,1000,563_.jpg',
+          streamUrl: 'https://ugc-cdn-caching-n3ryktnah4snzsmsft.cloudwindow-route.com/engine/hls2/01/00169/zg6oug254cid_,n,.urlset/index-v1-a1.m3u8?t=LpXHT-STVA4PAeDTDnAANHJP-NPKF99OG-aHfaE161E&s=1775612336&e=14400&f=4397529&node=ANdqgg+j29wtM0uEp2t6GABqJPI8mH/5D4oCOUoEDAo=&i=92.208&sp=2500&asn=3209&q=n&rq=PNs6ffWhp28iyMoApkPANZYIHnkjTEFrXkoHaT72'
+        },
+        {
+          title: 'Messiah – Episode 10',
+          description: 'Staffel 1, Folge 10',
+          duration: '24m',
+          thumbnail: 'https://m.media-amazon.com/images/M/MV5BYzA4ZDk4Y2EtY2NjYy00OGVhLWIwM2MtM2Y1NjAxNDY3NDA3XkEyXkFqcGc@._V1_QL75_UX1000_CR0,11,1000,563_.jpg',
+          streamUrl: 'https://ugc-cdn-caching-n3ryktnah4snzsmsft.cloudwindow-route.com/engine/hls2/01/00169/zg6oug254cid_,n,.urlset/index-v1-a1.m3u8?t=LpXHT-STVA4PAeDTDnAANHJP-NPKF99OG-aHfaE161E&s=1775612336&e=14400&f=4397529&node=ANdqgg+j29wtM0uEp2t6GABqJPI8mH/5D4oCOUoEDAo=&i=92.208&sp=2500&asn=3209&q=n&rq=PNs6ffWhp28iyMoApkPANZYIHnkjTEFrXkoHaT72'
+        }
+      ]
+    }
+  ]
+},
     {
       id: 'series-2',
       type: 'Serie',
-      title: 'Signal 9',
-      year: 2025,
-      seasons: 1,
+      title: 'The Blacklist',
+      year: 2013-2023,
+      seasons: 10,
       episodes: 8,
-      rating: '12+',
+      rating: '16+',
       quality: 'HD',
-      genre: ['Mystery', 'Drama'],
-      description: 'Beispielhafte Serienkarte mit modernem Poster-Look und später austauschbaren Daten.',
-      backdrop: 'assets/series-2.svg',
-      logo: 'assets/series-2.svg',
-      streamUrl: ''
+      genre: ['Mystery', 'Thriler'],
+      description: 'Raymond „Red“ Reddington ist ein ehemaliger amerikanischer Marineoffizier und einer der meistgesuchten Verbrecher der USA. Eines Tages stellt er sich in der FBI-Hauptzentrale in Washington, D.C. und bietet dem FBI an, bei der Suche nach Verbrechern und Terroristen zu helfen. Allerdings verlangt er, einzig mit der FBI-Agentin Elizabeth Keen verhandeln zu müssen, die vor kurzem erst aus Quantico zugezogen ist. Die Informationen, die er weitergibt, stammen von einer von ihm über Jahre angelegten Liste, der sogenannten „Blacklist“.',
+      backdrop: 'http://186.2.175.5/media/images/channel/desktop/the-blacklist-6abbhlvn?format=avif',
+      logo: 'http://186.2.175.5/media/images/channel/desktop/the-blacklist-6abbhlvn?format=avif',
+      streamUrl: 'https://ugc-cdn-caching-n3jaeuw3ehedpghzva.cloudwindow-route.com/engine/hls2/01/00649/u5yvkt7ygpq1_,n,.urlset/index-v1-a1.m3u8?t=_Gzg1DIHqmbov_1WwdFMxg1isBJlwtHL3jawLBkiEZc&s=1775613353&e=14400&f=75650767&node=zGBu5D2v5eB3O/KB4a4xtvGvDbBUNXxDrrO4ga1VLgc=&i=92.208&sp=2500&asn=3209&q=n&rq=PNs6ffWhp28iyMoApkPANZYIHnkjTEFrXkoHaT72'
     },
     {
       id: 'series-3',
       type: 'Serie',
-      title: 'Afterglow Files',
+      title: 'Dear Killer Nannies: Grossgezogen von Mafia-Auftragskillern',
       year: 2026,
-      seasons: 3,
+      seasons: 1,
       episodes: 24,
-      rating: '16+',
+      rating: '12+',
       quality: '4K',
-      genre: ['Sci-Fi', 'Thriller'],
-      description: 'Noch eine Serien-Vorlage, die du später durch eigene Titel ersetzen kannst.',
-      backdrop: 'assets/series-3.svg',
-      logo: 'assets/series-3.svg',
-      streamUrl: ''
+      genre: ['Action', 'Drama'],
+      description: 'Juampi, der Sohn von Pablo Escobar, hat eine atypische Kindheit und lebt umgeben von Auftragsmördern, die als seine Kindermädchen arbeiten. Er idealisiert seinen Vater, betrachtet ihn als Wohltäter, aber als er aufwächst, erfährt er, dass sein Vater tatsächlich ein Verbrecher ist. Im Laufe der Jahre wird er sich der Last seines Nachnamens stellen müssen und entscheiden müssen, ob er das Familienerbe fortsetzen oder ein neues Leben von Grund auf neu beginnen möchte.',
+      backdrop: 'http://186.2.175.5/media/images/channel/desktop/j9WxyGBvzedJrTReqMp9BV1L9XMQcKUT-1775027940?format=avif',
+      logo: 'http://186.2.175.5/media/images/channel/desktop/j9WxyGBvzedJrTReqMp9BV1L9XMQcKUT-1775027940?format=avif',
+      streamUrl: 'https://ugc-cdn-caching-n3p3qosxlihxv3qtq0.cloudwindow-route.com/engine/hls2/01/16871/fnfpr8spn823_,n,.urlset/index-v1-a1.m3u8?t=8r2xpumT8_xcIzaVeiFWTzlpw-NhMJ9u7baI7zZp-FU&s=1775613612&e=14400&f=84358856&node=lxiKj63/2ULjVa8H1FYfU72ZxLdn02zeCTgM6pfU1O0=&i=92.208&sp=2500&asn=3209&q=n&rq=PNs6ffWhp28iyMoApkPANZYIHnkjTEFrXkoHaT72'
     }
   ]
 };
