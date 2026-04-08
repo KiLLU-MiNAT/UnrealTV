@@ -340,6 +340,13 @@ function createPlaceholderLiveChannels(count = 50) {
         ${escapeHtml(source.label || `Stream ${index + 1}`)}
       </button>
     `).join('');
+
+    els.detailsSourceButtons.querySelectorAll('.source-chip').forEach(btn => btn.addEventListener('click', () => {
+      const nextIndex = Number(btn.dataset.detailsSourceIndex);
+      if (Number.isNaN(nextIndex) || nextIndex === state.currentDetailsSourceIndex || !state.currentDetails) return;
+      state.currentDetailsSourceIndex = nextIndex;
+      playSelectedDetailsSource(state.currentDetails, nextIndex);
+    }));
   }
 
   function playSelectedDetailsSource(item, sourceIndex = 0) {
@@ -607,7 +614,7 @@ function syncBuiltinLiveChannels() {
   async function enterApp() {
     syncBuiltinLiveChannels();
     initChatBackend();
-    await initSiteSync();
+ // await initSiteSync();
     els.loginScreen.classList.add('hidden');
     els.appScreen.classList.remove('hidden');
     updateActiveProfileUI();
@@ -1078,14 +1085,22 @@ function stopBackgroundPlayback() {
     if (!video) return;
     resetVideoElement(video);
     if (!url) return;
-    if (window.Hls && window.Hls.isSupported() && /\.m3u8($|\?)/i.test(url)) {
+    const normalizedUrl = String(url || '').trim();
+    const looksLikeHls = /\.m3u8($|\?)/i.test(normalizedUrl)
+      || /\/hls\//i.test(normalizedUrl)
+      || /urlset/i.test(normalizedUrl)
+      || /master(\.m3u8)?($|\?)/i.test(normalizedUrl)
+      || /index[-_a-z0-9]*(\.m3u8)?($|\?)/i.test(normalizedUrl);
+
+    if (window.Hls && window.Hls.isSupported() && looksLikeHls) {
       const hls = new Hls();
-      hls.loadSource(url);
+      hls.loadSource(normalizedUrl);
       hls.attachMedia(video);
       video._hls = hls;
       hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
     } else {
-      video.src = url;
+      video.src = normalizedUrl;
+      video.load?.();
       video.play().catch(() => {});
     }
   }
