@@ -9,6 +9,7 @@
     series: 'unrealtv_series',
     epg: 'unrealtv_epg_store',
     myList: 'unrealtv_my_list',
+    profileState: 'unrealtv_profile_state',
     chat: 'unrealtv_chat_demo',
     accounts: 'unrealtv_accounts',
     texts: 'unrealtv_text_overrides',
@@ -24,6 +25,8 @@
     series: readJson(STORAGE.series, defaults.series || []),
     epgStore: readJson(STORAGE.epg, {}),
     myList: readJson(STORAGE.myList, []),
+    watchHistory: [],
+    continueWatching: [],
     textOverrides: readJson(STORAGE.texts, {}),
     quickAccessSettings: readJson(STORAGE.quickAccessSettings, { limit: 4 }),
     currentView: 'home',
@@ -78,6 +81,107 @@
       return fallback;
     }
   }
+
+  function currentProfileKey() {
+    return normalizeKey(state.activeProfile?.username || state.selectedAccount?.username || 'guest');
+  }
+
+  function profileScopedKey() {
+    return `${STORAGE.profileState}_${currentProfileKey()}`;
+  }
+
+  function loadProfileState() {
+    const data = readJson(profileScopedKey(), {});
+    state.myList = Array.isArray(data.myList) ? data.myList : [];
+    state.watchHistory = Array.isArray(data.watchHistory) ? data.watchHistory : [];
+    state.continueWatching = Array.isArray(data.continueWatching) ? data.continueWatching : [];
+  }
+
+  function saveProfileState() {
+    saveJson(profileScopedKey(), {
+      myList: state.myList,
+      watchHistory: state.watchHistory,
+      continueWatching: state.continueWatching
+    });
+    saveJson(STORAGE.myList, state.myList);
+  }
+
+  function isMobileCatalogLayout() {
+    return window.innerWidth <= 768;
+  }
+
+  function uniqueGenres(items) {
+    return [...new Set(items.flatMap(item => safeArr(item.genre).map(g => String(g).trim()).filter(Boolean)))];
+  }
+
+  function groupItemsByGenre(items) {
+    const buckets = {};
+    items.forEach(item => {
+      const genres = safeArr(item.genre).length ? safeArr(item.genre) : ['Weitere'];
+      genres.forEach(genre => {
+        if (!buckets[genre]) buckets[genre] = [];
+        buckets[genre].push(item);
+      });
+    });
+    return buckets;
+  }
+
+  function buildRecommendations(limit = 12) {
+    const genreScore = {};
+    [...state.watchHistory, ...state.continueWatching].forEach(entry => {
+      safeArr(entry.genre).forEach(genre => genreScore[genre] = (genreScore[genre] || 0) + 3);
+    });
+    const myListIds = new Set(state.myList);
+    const watchedIds = new Set(state.watchHistory.map(entry => entry.id));
+    const pool = [...state.movies, ...state.series].filter(item => !watchedIds.has(item.id));
+    const scored = pool.map(item => ({
+      item,
+      score: safeArr(item.genre).reduce((sum, genre) => sum + (genreScore[genre] || 0), 0) + (myListIds.has(item.id) ? 1 : 0)
+    })).filter(entry => entry.score > 0).sort((a, b) => b.score - a.score);
+    return scored.slice(0, limit).map(entry => entry.item);
+  }
+
+  function rememberPlayback(item, extra = {}) {
+    if (!item) return;
+    const base = {
+      id: item.id,
+      type: item.type,
+      title: item.title,
+      logo: item.logo,
+      backdrop: item.backdrop,
+      genre: safeArr(item.genre),
+      subtitle: extra.subtitle || (item.type === 'Serie' ? 'Weiter ansehen' : 'Zuletzt abgespielt'),
+      streamUrl: extra.streamUrl || item.streamUrl || '',
+      updatedAt: Date.now()
+    };
+    state.watchHistory = [base, ...state.watchHistory.filter(entry => `${entry.type}:${entry.id}` !== `${base.type}:${base.id}`)].slice(0, 30);
+    state.continueWatching = [base, ...state.continueWatching.filter(entry => `${entry.type}:${entry.id}` !== `${base.type}:${base.id}`)].slice(0, 12);
+    saveProfileState();
+  }
+
+  function railCardTemplate(item) {
+    const episodesBtn = item.type === 'Serie'
+      ? `<button class="rail-card-expand" type="button" data-episodes-id="${escapeHtml(item.id)}" aria-label="Staffeln und Episoden öffnen">⌄</button>`
+      : '';
+    return `
+      <article class="rail-card" data-id="${escapeHtml(item.id)}" data-type="${escapeHtml(item.type)}">
+        <div class="rail-card-poster" style="background-image:url('${escapeHtml(item.backdrop)}')">${episodesBtn}</div>
+        <div class="rail-card-title">${escapeHtml(item.title)}</div>
+      </article>`;
+  }
+
+  function mobileRailsTemplate(items, labelPrefix = 'Genre') {
+    const grouped = groupItemsByGenre(items);
+    const genres = Object.keys(grouped);
+    if (!genres.length) return '<div class="chat-empty">Keine Titel vorhanden.</div>';
+    return genres.map(genre => `
+      <section class="mobile-rail-section">
+        <div class="section-header compact"><div><p class="eyebrow">${escapeHtml(labelPrefix)}</p><h3>${escapeHtml(genre)}</h3></div></div>
+        <div class="mobile-rail">${grouped[genre].map(railCardTemplate).join('')}</div>
+      </section>
+    `).join('');
+  }
+
   const saveJson = (key, value) => localStorage.setItem(key, JSON.stringify(value));
   const persistAll = () => {
     saveJson(STORAGE.live, state.liveChannels);
@@ -416,8 +520,9 @@
     }
     state.activeProfile = state.selectedAccount;
     saveJson(STORAGE.profile, state.activeProfile);
+    loadProfileState();
     els.passwordOverlay.classList.add('hidden');
-    enterApp().catch(err => { console.error('Login/EnterApp Fehler:', err); els.loginMessage.textContent = 'Fehler beim Starten der App. Bitte Konsole prüfen.'; });
+    enterApp().catch(err => console.error('Login/EnterApp Fehler:', err));
   }
 
   function logout() {
@@ -425,25 +530,24 @@
     location.reload();
   }
 
-async function enterApp() {
-  syncBuiltinLiveChannels();
-  initChatBackend();
-  // await initSiteSync();  // 🔴 deaktiviert Firestore Sync
-
-  els.loginScreen.classList.add('hidden');
-  els.appScreen.classList.remove('hidden');
-  updateActiveProfileUI();
-  renderHero();
-  renderHome();
-  renderCatalogs();
-  renderMyList();
-  renderHero();
-  resetLivePanel();
-  renderChannels('');
-  switchView('home');
-  applyTextOverrides();
-  updateAdminAccess();
-}
+  async function enterApp() {
+    syncBuiltinLiveChannels();
+    initChatBackend();
+    // await initSiteSync();
+    els.loginScreen.classList.add('hidden');
+    els.appScreen.classList.remove('hidden');
+    updateActiveProfileUI();
+    renderHero();
+    renderHome();
+    renderCatalogs();
+    renderMyList();
+    renderHero();
+    resetLivePanel();
+    renderChannels('');
+    switchView('home');
+    applyTextOverrides();
+    updateAdminAccess();
+  }
 
 
   function resetLivePanel() {
@@ -628,11 +732,23 @@ async function enterApp() {
           </div>
         </div>
       </article>`).join('');
+    const continueItems = state.continueWatching.slice(0, 8);
+    const recommendationItems = buildRecommendations(8);
     els.homeView.innerHTML = `
       <section class="content-row">
         <div class="section-header"><div><p class="eyebrow">Jetzt live</p><h2>Schnellzugriff</h2></div></div>
         <div class="channel-row">${livePreview}</div>
       </section>
+      ${continueItems.length ? `
+      <section class="content-row">
+        <div class="section-header"><div><p class="eyebrow">Für ${escapeHtml(state.activeProfile?.username || 'dich')}</p><h2>Weiterschauen</h2></div></div>
+        <div class="${isMobileCatalogLayout() ? 'mobile-rail' : 'catalog-grid'}">${continueItems.map(isMobileCatalogLayout() ? railCardTemplate : cardTemplate).join('')}</div>
+      </section>` : ''}
+      ${recommendationItems.length ? `
+      <section class="content-row">
+        <div class="section-header"><div><p class="eyebrow">Smart Empfehlungen</p><h2>Das könnte dir gefallen</h2></div></div>
+        <div class="${isMobileCatalogLayout() ? 'mobile-rail' : 'catalog-grid'}">${recommendationItems.map(isMobileCatalogLayout() ? railCardTemplate : cardTemplate).join('')}</div>
+      </section>` : ''}
       <section class="content-row">
         <div class="section-header"><div><p class="eyebrow">Filme</p><h2>Platzhalter & Bibliothek</h2></div></div>
         <div class="catalog-grid" id="homeMoviesGrid">${state.movies.slice(0,6).map(cardTemplate).join('')}</div>
@@ -650,8 +766,13 @@ async function enterApp() {
   }
 
   function renderCatalogs() {
-    els.moviesGrid.innerHTML = state.movies.map(cardTemplate).join('');
-    els.seriesGrid.innerHTML = state.series.map(cardTemplate).join('');
+    if (isMobileCatalogLayout()) {
+      els.moviesGrid.innerHTML = mobileRailsTemplate(state.movies, 'Filme');
+      els.seriesGrid.innerHTML = mobileRailsTemplate(state.series, 'Serien');
+    } else {
+      els.moviesGrid.innerHTML = state.movies.map(cardTemplate).join('');
+      els.seriesGrid.innerHTML = state.series.map(cardTemplate).join('');
+    }
     attachCardEvents(els.moviesGrid);
     attachCardEvents(els.seriesGrid);
   }
@@ -659,7 +780,13 @@ async function enterApp() {
   function renderMyList() {
     const ids = new Set(state.myList);
     const items = [...state.movies, ...state.series].filter(item => ids.has(item.id));
-    els.myListGrid.innerHTML = items.length ? items.map(cardTemplate).join('') : '<div class="chat-empty">Noch nichts gespeichert.</div>';
+    if (!items.length) {
+      els.myListGrid.innerHTML = '<div class="chat-empty">Noch nichts gespeichert.</div>';
+    } else if (isMobileCatalogLayout()) {
+      els.myListGrid.innerHTML = mobileRailsTemplate(items, 'Meine Liste');
+    } else {
+      els.myListGrid.innerHTML = items.map(cardTemplate).join('');
+    }
     attachCardEvents(els.myListGrid);
   }
 
@@ -906,6 +1033,8 @@ async function enterApp() {
       if (!state.currentDetails || state.currentDetails.id !== series.id) openDetails(series);
       if (els.detailsPlayerWrap) els.detailsPlayerWrap.classList.remove('hidden');
       playDetailsVideo(ep.streamUrl || series.streamUrl || '', ep.streamUrl ? ep : series);
+      rememberPlayback(series, { subtitle: `Weiter bei ${ep.title || `Episode ${Number(btn.dataset.episodeIndex) + 1}`}`, streamUrl: ep.streamUrl || series.streamUrl || '' });
+      renderHome();
       subscribeToRoom('details', series);
       closeEpisodesModal();
     }));
@@ -974,8 +1103,9 @@ async function enterApp() {
     const set = new Set(state.myList);
     if (set.has(item.id)) set.delete(item.id); else set.add(item.id);
     state.myList = [...set];
-    saveJson(STORAGE.myList, state.myList);
+    saveProfileState();
     renderMyList();
+    renderHome();
     renderHeroSlide(state.heroIndex || 0);
   }
 
@@ -1650,12 +1780,12 @@ function renderAdminContentTab() {
   }
 
   
-  async function saveAdminQuickAccess() {
+  function saveAdminQuickAccess() {
     const limit = Math.max(1, Math.min(20, Number(document.getElementById('adminQuickAccessLimit')?.value || 4)));
     const selectedIds = [...document.querySelectorAll('[data-qa-id]:checked')].map(el => el.dataset.qaId);
     state.quickAccessSettings = { limit };
     state.liveChannels = state.liveChannels.map(channel => ({ ...channel, quickAccess: selectedIds.includes(channel.id) }));
-    await commitSiteChanges({ message: 'Schnellzugriff gespeichert.', alertUser: true });
+    commitSiteChanges({ message: 'Schnellzugriff gespeichert.', alertUser: true });
   }
 
   function setAdminQuickAccessTop() {
@@ -1716,7 +1846,7 @@ function renderAdminPanel() {
     target.value = await readFileAsDataUrl(file);
   }
 
-  async function saveEditedAdminContent() {
+  function saveEditedAdminContent() {
     const type = state.adminSelections.contentType;
     const id = state.adminSelections.contentId;
     const list = getCollectionByType(type).map(entry => {
@@ -1733,10 +1863,10 @@ function renderAdminPanel() {
       return base;
     });
     setCollectionByType(type, list);
-    await commitSiteChanges({ message: 'Inhalt gespeichert.' });
+    commitSiteChanges({ message: 'Inhalt gespeichert.' });
   }
 
-  async function addAdminContent() {
+  function addAdminContent() {
     const type = document.getElementById('adminAddType')?.value || 'live';
     const title = document.getElementById('adminAddTitle')?.value.trim();
     const description = document.getElementById('adminAddDescription')?.value.trim();
@@ -1753,24 +1883,24 @@ function renderAdminPanel() {
     } else {
       item = { id: uniqueId('series'), type: 'Serie', title, year: new Date().getFullYear(), seasons: 1, episodes: 8, rating: '—', quality: 'HD', genre: splitTags(extra || 'Drama'), description: description || 'Neue Serie.', backdrop: backdrop || poster || 'assets/series-1.svg', logo: poster || backdrop || 'assets/series-1.svg', streamUrl, source: 'builtin', chatEnabled: true };
     }
-    setCollectionByType(type, [...getCollectionByType(type), item]);
+    setCollectionByType(type, [item, ...getCollectionByType(type)]);
     state.adminSelections.contentType = type;
     state.adminSelections.contentId = item.id;
     state.adminSelections.streamType = type;
     state.adminSelections.streamId = item.id;
-    await commitSiteChanges({ message: 'Neuer Eintrag angelegt.', openLiveId: type === 'live' ? item.id : null, preserveLive: type !== 'live' });
+    commitSiteChanges({ message: 'Neuer Eintrag angelegt.', openLiveId: type === 'live' ? item.id : null, preserveLive: type !== 'live' });
   }
 
-  async function deleteSelectedAdminContent() {
+  function deleteSelectedAdminContent() {
     const type = state.adminSelections.contentType;
     const id = state.adminSelections.contentId;
     if (!id || !confirm('Diesen Eintrag wirklich löschen?')) return;
     setCollectionByType(type, getCollectionByType(type).filter(entry => entry.id !== id));
     state.adminSelections.contentId = null;
-    await commitSiteChanges({ message: 'Eintrag gelöscht.', alertUser: false });
+    commitSiteChanges({ message: 'Eintrag gelöscht.', alertUser: false });
   }
 
-  async function saveAdminStreams() {
+  function saveAdminStreams() {
     const type = state.adminSelections.streamType;
     const id = state.adminSelections.streamId;
     const list = getCollectionByType(type).map(entry => {
@@ -1790,10 +1920,10 @@ function renderAdminPanel() {
       return base;
     });
     setCollectionByType(type, list);
-    await commitSiteChanges({ message: 'Streams gespeichert.', openLiveId: type === 'live' ? id : null, preserveLive: type !== 'live' });
+    commitSiteChanges({ message: 'Streams gespeichert.', openLiveId: type === 'live' ? id : null, preserveLive: type !== 'live' });
   }
 
-  async function saveAdminTexts() {
+  function saveAdminTexts() {
     state.textOverrides = {
       appTitle: document.getElementById('adminTextAppTitle')?.value.trim() || 'UnrealTV',
       brandText: document.getElementById('adminTextBrand')?.value.trim() || 'UNREALTV',
@@ -1813,20 +1943,18 @@ function renderAdminPanel() {
     persistTextOverrides();
     applyTextOverrides();
     renderAdminPanel();
-    await saveRemoteSiteState();
+    saveRemoteSiteState();
     alert('Texte gespeichert.');
   }
 
-  async function resetAdminTexts() {
+  function resetAdminTexts() {
     state.textOverrides = {};
     localStorage.removeItem(STORAGE.texts);
     applyTextOverrides();
     renderAdminPanel();
-    await saveRemoteSiteState();
-    alert('Texte zurückgesetzt.');
   }
 
-  async function addAdminUser() {
+  function addAdminUser() {
     const username = document.getElementById('adminNewUsername')?.value.trim();
     const password = document.getElementById('adminNewPassword')?.value.trim();
     const avatar = document.getElementById('adminNewAvatar')?.value.trim() || 'assets/avatar-admin.svg';
@@ -1837,18 +1965,19 @@ function renderAdminPanel() {
     persistAccounts();
     renderProfiles();
     renderAdminPanel();
-    await saveRemoteSiteState();
+    saveRemoteSiteState();
+    saveRemoteSiteState();
     alert('Profil hinzugefügt.');
   }
 
-  async function deleteAdminUser(username) {
+  function deleteAdminUser(username) {
     if (!username || String(username).toLowerCase() === 'admin') return;
     if (!confirm(`Profil ${username} löschen?`)) return;
     state.accounts = state.accounts.filter(account => account.username !== username);
     persistAccounts();
     renderProfiles();
     renderAdminPanel();
-    await saveRemoteSiteState();
+    saveRemoteSiteState();
   }
 
   function clearAdminRoom(roomId) {
@@ -1930,7 +2059,7 @@ function renderAdminPanel() {
       const hash = stableSitePayloadHash(payload);
       state.siteSync.lastRemoteHash = hash;
       await ref.set(payload, { merge: true });
-      setStatus('Änderungen wurden direkt live gespeichert und online synchronisiert.', 'success');
+      setStatus('Änderungen wurden lokal und online gespeichert.', 'success');
       return true;
     } catch (err) {
       console.error('Remote Site Save Fehler:', err);
@@ -2029,6 +2158,8 @@ function initChatBackend() {
       const item = state.currentDetails;
       if (els.detailsPlayerWrap) els.detailsPlayerWrap.classList.remove('hidden');
       playDetailsVideo(item.streamUrl || '', item);
+      rememberPlayback(item);
+      renderHome();
       subscribeToRoom('details', item);
     });
     els.detailsSaveBtn.addEventListener('click', () => state.currentDetails && toggleMyList(state.currentDetails));
@@ -2077,7 +2208,7 @@ function initChatBackend() {
       else if (target.id === 'adminStreamItem') { state.adminSelections.streamId = target.value; renderAdminPanel(); }
       else if (target.matches('input[type="file"][data-target-input]')) { await handleAdminFileUpload(target); }
     });
-    els.adminPanelBody?.addEventListener('click', async (e) => {
+    els.adminPanelBody?.addEventListener('click', (e) => {
       const jump = e.target.closest('[data-admin-jump]');
       if (jump) { state.adminTab = jump.dataset.adminJump; renderAdminPanel(); return; }
       const deleteUserBtn = e.target.closest('[data-delete-user]');
@@ -2085,18 +2216,18 @@ function initChatBackend() {
       const clearRoomBtn = e.target.closest('[data-clear-room]');
       if (clearRoomBtn) { clearAdminRoom(clearRoomBtn.dataset.clearRoom); return; }
       if (e.target.id === 'adminDeleteContentBtn') { deleteSelectedAdminContent(); return; }
-      if (e.target.id === 'adminResetTextsBtn') { await resetAdminTexts(); return; }
+      if (e.target.id === 'adminResetTextsBtn') { resetAdminTexts(); return; }
       if (e.target.id === 'adminQuickAccessSelectTopBtn') { setAdminQuickAccessTop(); return; }
       if (e.target.id === 'adminQuickAccessClearBtn') { clearAdminQuickAccess(); return; }
     });
-    els.adminPanelBody?.addEventListener('submit', async (e) => {
+    els.adminPanelBody?.addEventListener('submit', (e) => {
       e.preventDefault();
-      if (e.target.id === 'adminEditContentForm') await saveEditedAdminContent();
-      else if (e.target.id === 'adminAddContentForm') await addAdminContent();
-      else if (e.target.id === 'adminStreamsForm') await saveAdminStreams();
-      else if (e.target.id === 'adminTextsForm') await saveAdminTexts();
-      else if (e.target.id === 'adminQuickAccessForm') await saveAdminQuickAccess();
-      else if (e.target.id === 'adminAddUserForm') await addAdminUser();
+      if (e.target.id === 'adminEditContentForm') saveEditedAdminContent();
+      else if (e.target.id === 'adminAddContentForm') addAdminContent();
+      else if (e.target.id === 'adminStreamsForm') saveAdminStreams();
+      else if (e.target.id === 'adminTextsForm') saveAdminTexts();
+      else if (e.target.id === 'adminQuickAccessForm') saveAdminQuickAccess();
+      else if (e.target.id === 'adminAddUserForm') addAdminUser();
     });
     els.loadM3uUrlBtn.addEventListener('click', () => importFromUrl(els.m3uUrlInput.value.trim(), applyLiveImport));
     els.loadEpgUrlBtn.addEventListener('click', () => importFromUrl(els.epgUrlInput.value.trim(), applyEpgImport));
@@ -2114,7 +2245,7 @@ function initChatBackend() {
     });
   }
 
-  window.addEventListener('beforeunload', () => { clearHeroTimer(); if (state.siteSync.unsub) { try { state.siteSync.unsub(); } catch {} } });
+  window.addEventListener('beforeunload', clearHeroTimer);
   enrich();
   renderProfiles();
   bindEvents();
