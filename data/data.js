@@ -6,7 +6,7 @@ window.UNREAL_DATA = {
     { username: 'Alessia', password: '63450', avatar: 'assets/avatar-alessia.svg', color: '#b5179e' },
     { username: 'Volkan', password: '63450', avatar: 'assets/avatar-volkan.svg', color: '#f4a261' },
     { username: 'Gesu', password: '63450', avatar: 'assets/avatar-gesu.png', color: '#fc2be4' },
-    { username: 'Mano', password: 'Anissa100', avatar: 'assets/avatar-Mano.svg', color: '#6a4c93' },
+    { username: 'Mano', password: 'Anissa100', avatar: 'assets/avatar-mano.svg', color: '#6a4c93' },
   ],
 
     // =========================================================
