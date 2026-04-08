@@ -58,12 +58,42 @@
         <button id="configToggle" class="icon-btn" aria-label="Import öffnen">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4"></path><path d="M12 18v4"></path><path d="M4.93 4.93l2.83 2.83"></path><path d="M16.24 16.24l2.83 2.83"></path><path d="M2 12h4"></path><path d="M18 12h4"></path><path d="M4.93 19.07l2.83-2.83"></path><path d="M16.24 7.76l2.83-2.83"></path><circle cx="12" cy="12" r="3"></circle></svg>
         </button>
+        <button id="adminToggle" class="icon-btn admin-trigger hidden" aria-label="Admin Panel öffnen" title="Admin Panel">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l7 3v6c0 4.5-3 7.8-7 9-4-1.2-7-4.5-7-9V6l7-3z"></path><path d="M9.5 12.5l1.7 1.7 3.3-4.2"></path></svg>
+        </button>
         <button id="profileMenuBtn" class="profile-mini" aria-label="Profilmenü öffnen">
           <img id="activeProfileAvatar" src="" alt="Aktives Profil" />
           <span id="activeProfileName">Admin</span>
         </button>
+        <button id="mobileMenuToggle" class="burger-btn" aria-label="Menü öffnen" aria-expanded="false" aria-controls="mobileMenu">
+          <span></span><span></span><span></span>
+        </button>
       </div>
     </header>
+
+    <div id="mobileMenuBackdrop" class="mobile-menu-backdrop hidden"></div>
+    <aside id="mobileMenu" class="mobile-menu hidden" aria-hidden="true">
+      <div class="mobile-menu-head">
+        <a href="#" class="brand mobile-menu-brand"><img src="assets/logo.png" alt="UnrealTV" onerror="this.style.display='none';this.parentNode.appendChild(document.createTextNode('UNREALTV'))"></a>
+        <button id="mobileMenuClose" class="icon-btn mobile-menu-close" aria-label="Menü schließen">×</button>
+      </div>
+      <nav class="mobile-menu-nav" aria-label="Mobile Navigation">
+        <button class="mobile-nav-link active" data-view="home">Home</button>
+        <button class="mobile-nav-link" data-view="live">Live TV</button>
+        <button class="mobile-nav-link" data-view="series">Serien</button>
+        <button class="mobile-nav-link" data-view="movies">Filme</button>
+        <button class="mobile-nav-link" data-view="mylist">Meine Liste</button>
+      </nav>
+      <div class="mobile-menu-actions">
+        <button id="mobileSearchToggle" class="mobile-action-btn">Suche</button>
+        <button id="mobileConfigToggle" class="mobile-action-btn">Import</button>
+        <button id="mobileAdminToggle" class="mobile-action-btn hidden">Admin Panel</button>
+      </div>
+      <button id="mobileProfileBtn" class="profile-mini mobile-profile-btn" aria-label="Profilmenü öffnen">
+        <img id="mobileActiveProfileAvatar" src="" alt="Aktives Profil" />
+        <span id="mobileActiveProfileName">Admin</span>
+      </button>
+    </aside>
 
     <div id="searchBar" class="search-bar hidden">
       <input id="globalSearchInput" type="search" placeholder="Suche nach Sendern, Filmen oder Serien..." />
@@ -116,8 +146,10 @@
             <div id="liveChatStatus" class="chat-status info">Chat lädt …</div>
             <div id="liveChatMessages" class="chat-messages"></div>
             <form id="liveChatForm" class="chat-form">
+              <button type="button" id="liveEmojiToggle" class="emoji-toggle" aria-label="Emoji auswählen">😊</button>
               <input id="liveChatInput" type="text" maxlength="240" placeholder="Schreibe eine Nachricht zum aktuellen Stream …" />
               <button type="submit" class="primary-btn">Senden</button>
+              <div id="liveEmojiPicker" class="emoji-picker hidden"></div>
             </form>
           </section>
         </div>
@@ -172,7 +204,9 @@
             </div>
           </div>
           <div id="detailsPlayerWrap" class="details-player-wrap hidden">
-            <video id="detailsPlayer" controls playsinline></video>
+            <div id="detailsPlayerHost" class="details-video-host">
+              <video id="detailsPlayer" controls playsinline></video>
+            </div>
           </div>
         </div>
 
@@ -187,8 +221,10 @@
           <div id="detailsChatStatus" class="chat-status info">Öffne einen Titel, um den Chat zu sehen.</div>
           <div id="detailsChatMessages" class="chat-messages compact"></div>
           <form id="detailsChatForm" class="chat-form">
+            <button type="button" id="detailsEmojiToggle" class="emoji-toggle" aria-label="Emoji auswählen">😊</button>
             <input id="detailsChatInput" type="text" maxlength="240" placeholder="Schreibe eine Nachricht zu diesem Film oder dieser Serie …" />
             <button type="submit" class="primary-btn">Senden</button>
+            <div id="detailsEmojiPicker" class="emoji-picker hidden"></div>
           </form>
         </aside>
       </div>
@@ -284,6 +320,30 @@
       </div>
     </div>
   </div>
+
+  <div id="adminPanelBackdrop" class="admin-panel-backdrop hidden"></div>
+  <aside id="adminPanel" class="admin-panel hidden" aria-hidden="true">
+    <div class="admin-panel-shell">
+      <div class="admin-panel-head">
+        <div>
+          <p class="eyebrow">Admin</p>
+          <h2>Control Center</h2>
+        </div>
+        <button id="closeAdminPanel" class="close-btn" aria-label="Admin Panel schließen">×</button>
+      </div>
+      <div class="admin-tabs" role="tablist" aria-label="Admin Bereiche">
+        <button class="admin-tab active" data-admin-tab="overview" type="button">Übersicht</button>
+        <button class="admin-tab" data-admin-tab="quickaccess" type="button">Startseite</button>
+        <button class="admin-tab" data-admin-tab="content" type="button">Inhalte</button>
+        <button class="admin-tab" data-admin-tab="streams" type="button">Streams</button>
+        <button class="admin-tab" data-admin-tab="texts" type="button">Texte</button>
+        <button class="admin-tab" data-admin-tab="users" type="button">Nutzer</button>
+        <button class="admin-tab" data-admin-tab="chat" type="button">Chat</button>
+      </div>
+      <div id="adminPanelBody" class="admin-panel-body"></div>
+    </div>
+  </aside>
+
 
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script><div id="episodesModal" class="episodes-modal hidden" aria-hidden="true">
     <div class="episodes-card">

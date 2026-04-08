@@ -9,17 +9,23 @@
     series: 'unrealtv_series',
     epg: 'unrealtv_epg_store',
     myList: 'unrealtv_my_list',
-    chat: 'unrealtv_chat_demo'
+    chat: 'unrealtv_chat_demo',
+    accounts: 'unrealtv_accounts',
+    texts: 'unrealtv_text_overrides',
+    quickAccessSettings: 'unrealtv_quickaccess_settings'
   };
 
   const state = {
     selectedAccount: null,
     activeProfile: readJson(STORAGE.profile, null),
+    accounts: readJson(STORAGE.accounts, defaults.accounts || []),
     liveChannels: readJson(STORAGE.live, defaults.liveChannels || []),
     movies: readJson(STORAGE.movies, defaults.movies || []),
     series: readJson(STORAGE.series, defaults.series || []),
     epgStore: readJson(STORAGE.epg, {}),
     myList: readJson(STORAGE.myList, []),
+    textOverrides: readJson(STORAGE.texts, {}),
+    quickAccessSettings: readJson(STORAGE.quickAccessSettings, { limit: 4 }),
     currentView: 'home',
     currentLive: null,
     currentLiveSourceIndex: 0,
@@ -29,7 +35,10 @@
     heroTimer: null,
     heroPaused: false,
     currentChatRoom: { live: null, details: null },
-    chat: { mode: 'demo', firestore: null, unsubscribers: { live: null, details: null }, reason: 'Demo-Modus aktiv.' }
+    chat: { mode: 'demo', firestore: null, unsubscribers: { live: null, details: null }, reason: 'Demo-Modus aktiv.' },
+    siteSync: { enabled: false, firestore: null, unsub: null, applyingRemote: false, lastRemoteHash: '' },
+    adminTab: 'overview',
+    adminSelections: { contentType: 'live', contentId: null, streamType: 'live', streamId: null, chatRoom: null }
   };
 
   const $ = (id) => document.getElementById(id);
@@ -39,7 +48,7 @@
     selectedProfileAvatar: $('selectedProfileAvatar'), selectedProfileName: $('selectedProfileName'),
     passwordInput: $('passwordInput'), enterAppBtn: $('enterAppBtn'), loginMessage: $('loginMessage'),
     profileMenuBtn: $('profileMenuBtn'), activeProfileAvatar: $('activeProfileAvatar'), activeProfileName: $('activeProfileName'),
-    logoutAllBtn: $('logoutAllBtn'), heroSection: $('heroSection'), homeView: $('homeView'), liveView: $('liveView'),
+    logoutAllBtn: $('logoutAllBtn'), mobileMenuToggle: $('mobileMenuToggle'), mobileMenuClose: $('mobileMenuClose'), mobileMenu: $('mobileMenu'), mobileMenuBackdrop: $('mobileMenuBackdrop'), mobileSearchToggle: $('mobileSearchToggle'), mobileConfigToggle: $('mobileConfigToggle'), mobileProfileBtn: $('mobileProfileBtn'), mobileActiveProfileAvatar: $('mobileActiveProfileAvatar'), mobileActiveProfileName: $('mobileActiveProfileName'), heroSection: $('heroSection'), homeView: $('homeView'), liveView: $('liveView'),
     seriesView: $('seriesView'), moviesView: $('moviesView'), mylistView: $('mylistView'), seriesGrid: $('seriesGrid'),
     moviesGrid: $('moviesGrid'), myListGrid: $('myListGrid'), channelList: $('channelList'), channelCount: $('channelCount'),
     livePlayerHost: $('livePlayerHost'), livePlayer: $('livePlayer'), liveChannelTitle: $('liveChannelTitle'), liveChannelGroup: $('liveChannelGroup'),
@@ -47,7 +56,7 @@
     globalSearchInput: $('globalSearchInput'), detailsModal: $('detailsModal'), closeDetailsModal: $('closeDetailsModal'),
     detailsBackdrop: $('detailsBackdrop'), detailsType: $('detailsType'), detailsTitle: $('detailsTitle'), detailsMeta: $('detailsMeta'),
     detailsDescription: $('detailsDescription'), detailsTags: $('detailsTags'), detailsPlayBtn: $('detailsPlayBtn'),
-    detailsSaveBtn: $('detailsSaveBtn'), detailsEpisodesBtn: $('detailsEpisodesBtn'), detailsPlayerWrap: $('detailsPlayerWrap'), detailsPlayer: $('detailsPlayer'), detailsPoster: $('detailsPoster'), episodesModal: $('episodesModal'), closeEpisodesModal: $('closeEpisodesModal'), episodesSeriesTitle: $('episodesSeriesTitle'), episodesSeasonSelect: $('episodesSeasonSelect'), episodesList: $('episodesList'), configToggle: $('configToggle'), configDrawer: $('configDrawer'),
+    detailsSaveBtn: $('detailsSaveBtn'), detailsEpisodesBtn: $('detailsEpisodesBtn'), detailsPlayerWrap: $('detailsPlayerWrap'), detailsPlayerHost: $('detailsPlayerHost'), detailsPlayer: $('detailsPlayer'), detailsPoster: $('detailsPoster'), episodesModal: $('episodesModal'), closeEpisodesModal: $('closeEpisodesModal'), episodesSeriesTitle: $('episodesSeriesTitle'), episodesSeasonSelect: $('episodesSeasonSelect'), episodesList: $('episodesList'), configToggle: $('configToggle'), configDrawer: $('configDrawer'),
     closeConfigDrawer: $('closeConfigDrawer'), importStatus: $('importStatus'), liveImportCount: $('liveImportCount'),
     movieImportCount: $('movieImportCount'), seriesImportCount: $('seriesImportCount'), m3uUrlInput: $('m3uUrlInput'),
     loadM3uUrlBtn: $('loadM3uUrlBtn'), epgUrlInput: $('epgUrlInput'), loadEpgUrlBtn: $('loadEpgUrlBtn'),
@@ -55,9 +64,10 @@
     loadMoviesUrlBtn: $('loadMoviesUrlBtn'), moviesFileInput: $('moviesFileInput'), seriesUrlInput: $('seriesUrlInput'),
     loadSeriesUrlBtn: $('loadSeriesUrlBtn'), seriesFileInput: $('seriesFileInput'), resetLibraryBtn: $('resetLibraryBtn'),
     liveChatRoomLabel: $('liveChatRoomLabel'), liveChatStatus: $('liveChatStatus'), liveChatMessages: $('liveChatMessages'),
-    liveChatForm: $('liveChatForm'), liveChatInput: $('liveChatInput'), detailsChatRoomLabel: $('detailsChatRoomLabel'),
+    liveChatForm: $('liveChatForm'), liveChatInput: $('liveChatInput'), liveEmojiToggle: $('liveEmojiToggle'), liveEmojiPicker: $('liveEmojiPicker'), detailsChatRoomLabel: $('detailsChatRoomLabel'),
     detailsChatStatus: $('detailsChatStatus'), detailsChatMessages: $('detailsChatMessages'), detailsChatForm: $('detailsChatForm'),
-    detailsChatInput: $('detailsChatInput')
+    detailsChatInput: $('detailsChatInput'), detailsEmojiToggle: $('detailsEmojiToggle'), detailsEmojiPicker: $('detailsEmojiPicker'),
+    adminToggle: $('adminToggle'), mobileAdminToggle: $('mobileAdminToggle'), adminPanel: $('adminPanel'), adminPanelBackdrop: $('adminPanelBackdrop'), closeAdminPanel: $('closeAdminPanel'), adminPanelBody: $('adminPanelBody')
   };
 
   function readJson(key, fallback) {
@@ -77,6 +87,8 @@
     saveJson(STORAGE.myList, state.myList);
     updateImportCounts();
   };
+  const persistAccounts = () => saveJson(STORAGE.accounts, state.accounts);
+  const persistTextOverrides = () => saveJson(STORAGE.texts, state.textOverrides);
   const normalizeKey = (v) => String(v || '').toLowerCase().trim().replace(/\.[a-z0-9]{2,4}$/i, '').replace(/[^a-z0-9äöüß]+/gi, '-').replace(/^-+|-+$/g, '');
   const slug = (v) => normalizeKey(v).replace(/-+/g, '-');
   const initials = (v) => String(v || 'TV').split(/\s+/).filter(Boolean).slice(0, 2).map(s => s[0]).join('').toUpperCase() || 'TV';
@@ -198,7 +210,7 @@
       const fresh = builtinById.get(ch.id);
       if (!fresh) return ch;
       changed = true;
-      return { ...ch, ...fresh, source: 'builtin', chatEnabled: true };
+      return { ...fresh, ...ch, source: 'builtin', chatEnabled: ch.chatEnabled ?? true, sources: safeArr(ch.sources).length ? ch.sources : normalizeLiveSources(fresh) };
     });
     if (changed) persistAll();
   }
@@ -264,9 +276,12 @@
         epg: safeArr(ch.epg),
         epgId: ch.epgId || ch.tvgId || slug(ch.name),
         source: ch.source || 'builtin',
-        chatEnabled: ch.chatEnabled ?? ((ch.source || 'builtin') === 'builtin')
+        chatEnabled: ch.chatEnabled ?? ((ch.source || 'builtin') === 'builtin'),
+        quickAccess: !!ch.quickAccess
       });
     });
+    const qaLimit = Number(state.quickAccessSettings?.limit || 4);
+    state.quickAccessSettings = { limit: Math.max(1, Math.min(20, qaLimit || 4)) };
     state.movies = safeArr(state.movies).map((m, i) => ({
       id: m.id || `movie-${i+1}`,
       type: 'Film',
@@ -280,6 +295,9 @@
       backdrop: m.backdrop || m.logo || 'assets/movie-1.svg',
       logo: m.logo || m.backdrop || 'assets/movie-1.svg',
       streamUrl: m.streamUrl || '',
+      embed: m.embed || '',
+      embedCode: m.embedCode || '',
+      iframe: m.iframe || '',
       source: m.source || 'builtin',
       chatEnabled: m.chatEnabled ?? ((m.source || 'builtin') === 'builtin')
     }));
@@ -297,6 +315,9 @@
       backdrop: s.backdrop || s.logo || 'assets/series-1.svg',
       logo: s.logo || s.backdrop || 'assets/series-1.svg',
       streamUrl: s.streamUrl || '',
+      embed: s.embed || '',
+      embedCode: s.embedCode || '',
+      iframe: s.iframe || '',
       seasonData: buildSeasonData(s),
       source: s.source || 'builtin',
       chatEnabled: s.chatEnabled ?? ((s.source || 'builtin') === 'builtin')
@@ -319,13 +340,13 @@
   }
 
   function renderProfiles() {
-    els.profileGrid.innerHTML = defaults.accounts.map(acc => `
+    els.profileGrid.innerHTML = state.accounts.map(acc => `
       <button class="profile-card" data-user="${escapeHtml(acc.username)}">
         <img src="${escapeHtml(acc.avatar)}" alt="${escapeHtml(acc.username)}" />
         <span>${escapeHtml(acc.username)}</span>
       </button>`).join('');
     els.profileGrid.querySelectorAll('.profile-card').forEach(btn => btn.addEventListener('click', () => {
-      const account = defaults.accounts.find(a => a.username === btn.dataset.user);
+      const account = state.accounts.find(a => a.username === btn.dataset.user);
       if (!account) return;
       state.selectedAccount = account;
       els.selectedProfileAvatar.src = account.avatar;
@@ -343,10 +364,51 @@
     if (!state.activeProfile) return;
     els.activeProfileAvatar.src = state.activeProfile.avatar;
     els.activeProfileName.textContent = state.activeProfile.username;
+    if (els.mobileActiveProfileAvatar) els.mobileActiveProfileAvatar.src = state.activeProfile.avatar;
+    if (els.mobileActiveProfileName) els.mobileActiveProfileName.textContent = state.activeProfile.username;
+    updateAdminAccess();
+  }
+
+  function isAdminProfile(profile = state.activeProfile) {
+    return !!(profile && String(profile.username || '').toLowerCase() === 'admin');
+  }
+
+  function updateAdminAccess() {
+    const visible = isAdminProfile();
+    els.adminToggle?.classList.toggle('hidden', !visible);
+    els.mobileAdminToggle?.classList.toggle('hidden', !visible);
+    if (!visible) closeAdminPanel();
+  }
+
+  function setTextIfFound(selector, value) {
+    const node = document.querySelector(selector);
+    if (!node || value == null || value === '') return;
+    node.textContent = value;
+  }
+
+  function applyTextOverrides() {
+    const text = state.textOverrides || {};
+    if (text.appTitle) document.title = text.appTitle;
+    document.querySelectorAll('.brand').forEach(node => { if (text.brandText) node.setAttribute('aria-label', text.brandText); });
+    const navMap = { home: text.navHome, live: text.navLive, series: text.navSeries, movies: text.navMovies, mylist: text.navMyList };
+    document.querySelectorAll('.nav-link, .mobile-nav-link').forEach(btn => {
+      const key = String(btn.dataset.view || '').toLowerCase();
+      if (navMap[key]) btn.textContent = navMap[key];
+    });
+    setTextIfFound('#liveView .section-header h2', text.liveHeading);
+    setTextIfFound('#seriesView .section-header h2', text.seriesHeading);
+    setTextIfFound('#moviesView .section-header h2', text.moviesHeading);
+    setTextIfFound('#mylistView .section-header h2', text.myListHeading);
+    setTextIfFound('.live-chat-panel h3', text.liveChatTitle);
+    setTextIfFound('.details-chat-panel h3', text.detailsChatTitle);
+    const importTitle = document.querySelector('#configDrawer .config-header h3');
+    if (importTitle && text.importTitle) importTitle.textContent = text.importTitle;
   }
 
   function doLogin() {
     if (!state.selectedAccount) return;
+    const latestAccount = state.accounts.find(acc => acc.username === state.selectedAccount.username) || state.selectedAccount;
+    state.selectedAccount = latestAccount;
     const pw = els.passwordInput.value.trim();
     if (pw !== state.selectedAccount.password) {
       els.loginMessage.textContent = 'Falsches Passwort. Bitte erneut versuchen.';
@@ -355,7 +417,7 @@
     state.activeProfile = state.selectedAccount;
     saveJson(STORAGE.profile, state.activeProfile);
     els.passwordOverlay.classList.add('hidden');
-    enterApp();
+    enterApp().catch(err => { console.error('Login/EnterApp Fehler:', err); els.loginMessage.textContent = 'Fehler beim Starten der App. Bitte Konsole prüfen.'; });
   }
 
   function logout() {
@@ -363,21 +425,25 @@
     location.reload();
   }
 
-  function enterApp() {
-    syncBuiltinLiveChannels();
-    initChatBackend();
-    els.loginScreen.classList.add('hidden');
-    els.appScreen.classList.remove('hidden');
-    updateActiveProfileUI();
-    renderHero();
-    renderHome();
-    renderCatalogs();
-    renderMyList();
-    renderHero();
-    resetLivePanel();
-    renderChannels('');
-    switchView('home');
-  }
+async function enterApp() {
+  syncBuiltinLiveChannels();
+  initChatBackend();
+  // await initSiteSync();  // 🔴 deaktiviert Firestore Sync
+
+  els.loginScreen.classList.add('hidden');
+  els.appScreen.classList.remove('hidden');
+  updateActiveProfileUI();
+  renderHero();
+  renderHome();
+  renderCatalogs();
+  renderMyList();
+  renderHero();
+  resetLivePanel();
+  renderChannels('');
+  switchView('home');
+  applyTextOverrides();
+  updateAdminAccess();
+}
 
 
   function resetLivePanel() {
@@ -433,7 +499,7 @@
     if (!item) return;
     openDetails(item);
     if (els.detailsPlayerWrap) els.detailsPlayerWrap.classList.remove('hidden');
-    playDetailsVideo(item.streamUrl || '');
+    playDetailsVideo(item.streamUrl || '', item);
     subscribeToRoom('details', item);
   }
 
@@ -548,11 +614,19 @@
   }
 
   function renderHome() {
-    const livePreview = state.liveChannels.slice(0,4).map(ch => `
+    const quickAccessChannels = state.liveChannels.filter(ch => ch.quickAccess);
+    const quickAccessLimit = Math.max(1, Math.min(20, Number(state.quickAccessSettings?.limit || 4)));
+    const homeChannels = (quickAccessChannels.length ? quickAccessChannels : state.liveChannels).slice(0, quickAccessLimit);
+    const livePreview = homeChannels.map(ch => `
       <article class="channel-card" data-live-id="${escapeHtml(ch.id)}">
         <div class="channel-card-top"><span class="badge live">LIVE</span><span>${escapeHtml(ch.group)}</span></div>
-        <h3>${escapeHtml(ch.name)}</h3>
-        <p>${escapeHtml((ch.epg[0] && ch.epg[0].title) || 'Kein EPG')}</p>
+        <div class="channel-card-main">
+          ${ch.logoUrl ? `<img class="channel-card-logo" src="${escapeHtml(ch.logoUrl)}" alt="${escapeHtml(ch.name)} Logo" loading="lazy" />` : `<div class="channel-card-logo fallback">${escapeHtml(ch.logo || initials(ch.name || '?'))}</div>`}
+          <div class="channel-card-copy">
+            <h3>${escapeHtml(ch.name)}</h3>
+            <p>${escapeHtml((ch.epg[0] && ch.epg[0].title) || 'Kein EPG')}</p>
+          </div>
+        </div>
       </article>`).join('');
     els.homeView.innerHTML = `
       <section class="content-row">
@@ -589,11 +663,44 @@
     attachCardEvents(els.myListGrid);
   }
 
+  function openMobileMenu() {
+    if (!els.mobileMenu || !els.mobileMenuBackdrop) return;
+    els.mobileMenu.classList.remove('hidden');
+    els.mobileMenuBackdrop.classList.remove('hidden');
+    requestAnimationFrame(() => {
+      els.mobileMenu.classList.add('active');
+      els.mobileMenuBackdrop.classList.add('active');
+    });
+    els.mobileMenu.setAttribute('aria-hidden', 'false');
+    if (els.mobileMenuToggle) els.mobileMenuToggle.setAttribute('aria-expanded', 'true');
+    document.body.classList.add('mobile-menu-open');
+  }
+
+  function closeMobileMenu() {
+    if (!els.mobileMenu || !els.mobileMenuBackdrop) return;
+    els.mobileMenu.classList.remove('active');
+    els.mobileMenuBackdrop.classList.remove('active');
+    els.mobileMenu.setAttribute('aria-hidden', 'true');
+    if (els.mobileMenuToggle) els.mobileMenuToggle.setAttribute('aria-expanded', 'false');
+    document.body.classList.remove('mobile-menu-open');
+    setTimeout(() => {
+      els.mobileMenu?.classList.add('hidden');
+      els.mobileMenuBackdrop?.classList.add('hidden');
+    }, 220);
+  }
+
   function switchView(view) {
     state.currentView = view;
     document.querySelectorAll('.nav-link').forEach(btn => btn.classList.toggle('active', btn.dataset.view === view));
+    document.querySelectorAll('.mobile-nav-link').forEach(btn => btn.classList.toggle('active', btn.dataset.view === view));
     [els.homeView, els.liveView, els.seriesView, els.moviesView, els.mylistView].forEach(v => v.classList.add('hidden'));
     ({ home: els.homeView, live: els.liveView, series: els.seriesView, movies: els.moviesView, mylist: els.mylistView }[view] || els.homeView).classList.remove('hidden');
+
+    if (els.heroSection) {
+      const showHero = view === 'home' || view === 'mylist';
+      els.heroSection.classList.toggle('hidden', !showHero);
+    }
+    closeMobileMenu();
   }
 
   function resetVideoElement(video) {
@@ -622,6 +729,28 @@
       els.livePlayer = video;
     } else {
       els.livePlayer = existingVideo;
+      existingVideo.classList.remove('hidden');
+    }
+  }
+
+
+  function resetDetailsPlayerHost() {
+    if (!els.detailsPlayerHost) return;
+    const existingVideo = els.detailsPlayerHost.querySelector('video');
+    const existingIframe = els.detailsPlayerHost.querySelector('iframe');
+    if (existingVideo) resetVideoElement(existingVideo);
+    if (existingIframe) existingIframe.remove();
+    if (!existingVideo) {
+      const video = document.createElement('video');
+      video.id = 'detailsPlayer';
+      video.controls = true;
+      video.playsInline = true;
+      video.setAttribute('playsinline', '');
+      els.detailsPlayerHost.innerHTML = '';
+      els.detailsPlayerHost.appendChild(video);
+      els.detailsPlayer = video;
+    } else {
+      els.detailsPlayer = existingVideo;
       existingVideo.classList.remove('hidden');
     }
   }
@@ -681,7 +810,34 @@
     playMedia(els.livePlayer, url);
   }
 
-  function playDetailsVideo(url) {
+  function showEmbeddedDetailsStream(embedValue) {
+    if (!els.detailsPlayerHost) return;
+    resetDetailsPlayerHost();
+    if (els.detailsPlayer) {
+      resetVideoElement(els.detailsPlayer);
+      els.detailsPlayer.remove();
+      els.detailsPlayer = null;
+    }
+    const iframeSrc = extractIframeSrc(embedValue);
+    if (!iframeSrc) return;
+    const iframe = document.createElement('iframe');
+    iframe.src = iframeSrc;
+    iframe.className = 'embed-frame details-embed-frame';
+    iframe.setAttribute('allowfullscreen', '');
+    iframe.setAttribute('loading', 'lazy');
+    iframe.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
+    iframe.setAttribute('allow', 'autoplay; fullscreen; picture-in-picture');
+    els.detailsPlayerHost.innerHTML = '';
+    els.detailsPlayerHost.appendChild(iframe);
+  }
+
+  function playDetailsVideo(url, item = null) {
+    const embedValue = item?.embedCode || item?.embed || item?.iframe || '';
+    if (embedValue) {
+      showEmbeddedDetailsStream(embedValue);
+      return;
+    }
+    resetDetailsPlayerHost();
     playMedia(els.detailsPlayer, url);
   }
 
@@ -749,7 +905,7 @@
       if (!ep) return;
       if (!state.currentDetails || state.currentDetails.id !== series.id) openDetails(series);
       if (els.detailsPlayerWrap) els.detailsPlayerWrap.classList.remove('hidden');
-      playDetailsVideo(ep.streamUrl || series.streamUrl || '');
+      playDetailsVideo(ep.streamUrl || series.streamUrl || '', ep.streamUrl ? ep : series);
       subscribeToRoom('details', series);
       closeEpisodesModal();
     }));
@@ -792,6 +948,7 @@
     if (els.detailsEpisodesBtn) els.detailsEpisodesBtn.classList.toggle('hidden', item.type !== 'Serie');
     closeEpisodesModal();
     if (els.detailsPlayerWrap) els.detailsPlayerWrap.classList.add('hidden');
+    resetDetailsPlayerHost();
     if (els.detailsPlayer) resetVideoElement(els.detailsPlayer);
     els.detailsModal.classList.remove('hidden');
     els.detailsModal.setAttribute('aria-hidden', 'false');
@@ -803,10 +960,11 @@
     els.detailsModal.classList.add('hidden');
     els.detailsModal.setAttribute('aria-hidden', 'true');
     if (els.detailsPlayerWrap) els.detailsPlayerWrap.classList.add('hidden');
+    resetDetailsPlayerHost();
     if (els.detailsPlayer) resetVideoElement(els.detailsPlayer);
     teardownChat('details');
     state.currentDetails = null;
-    document.body.style.overflow = '';
+    if (!els.adminPanel || els.adminPanel.classList.contains('hidden')) document.body.style.overflow = '';
     const scroller = els.detailsModal?.querySelector('.details-card');
     if (scroller) scroller.scrollTop = 0;
     if (!state.heroPaused) renderHero();
@@ -924,6 +1082,7 @@
     enrich();
     renderHome();
     renderChannels();
+    saveRemoteSiteState();
     setStatus(`${imported.length} Live-TV-Sender importiert.`, 'success');
   }
   function applyMovieImport(text) {
@@ -931,6 +1090,7 @@
     state.movies = [...defaults.movies.map(x => ({...x, source:'builtin', chatEnabled:true})), ...imported];
     enrich();
     renderHome(); renderCatalogs(); renderMyList();
+    saveRemoteSiteState();
     setStatus(`${imported.length} Filme importiert.`, 'success');
   }
   function applySeriesImport(text) {
@@ -938,6 +1098,7 @@
     state.series = [...defaults.series.map(x => ({...x, source:'builtin', chatEnabled:true})), ...imported];
     enrich();
     renderHome(); renderCatalogs(); renderMyList();
+    saveRemoteSiteState();
     setStatus(`${imported.length} Serien importiert.`, 'success');
   }
   function applyEpgImport(text) {
@@ -947,6 +1108,7 @@
     persistAll();
     renderChannels();
     if (state.currentLive) selectLiveChannel(state.currentLive.id);
+    saveRemoteSiteState();
     setStatus('EPG/XMLTV erfolgreich geladen.', 'success');
   }
   function resetLibrary() {
@@ -956,6 +1118,7 @@
     state.epgStore = {};
     persistAll();
     renderHome(); renderCatalogs(); renderMyList(); renderChannels();
+    saveRemoteSiteState();
     setStatus('Alle importierten Listen wurden zurückgesetzt.', 'info');
   }
 
@@ -982,20 +1145,67 @@
     el.className = `chat-status ${tone}`;
     el.textContent = message;
   }
-  function updateChatFormState(scope, enabled, placeholder) {
-    const input = scope === 'live' ? els.liveChatInput : els.detailsChatInput;
-    const form = scope === 'live' ? els.liveChatForm : els.detailsChatForm;
-    input.disabled = !enabled;
-    form.querySelector('button').disabled = !enabled;
-    input.placeholder = placeholder;
+  function getChatEls(scope) {
+    return scope === 'live'
+      ? { input: els.liveChatInput, form: els.liveChatForm, target: els.liveChatMessages, picker: els.liveEmojiPicker, toggle: els.liveEmojiToggle }
+      : { input: els.detailsChatInput, form: els.detailsChatForm, target: els.detailsChatMessages, picker: els.detailsEmojiPicker, toggle: els.detailsEmojiToggle };
   }
-  function renderChatMessages(target, messages, emptyText) {
-    target.innerHTML = messages.length ? messages.map(m => `
-      <div class="chat-message">
+  function updateChatFormState(scope, enabled, placeholder) {
+    const { input, form, toggle } = getChatEls(scope);
+    const submitBtn = form?.querySelector('button[type="submit"]');
+    if (input) input.disabled = !enabled;
+    if (submitBtn) submitBtn.disabled = !enabled;
+    if (toggle) toggle.disabled = !enabled;
+    if (input) input.placeholder = placeholder;
+  }
+
+  const CHAT_EMOJIS = ['😀','😂','😍','😎','🔥','👏','🙌','👍','❤️','🎬','📺','🍿','🤩','🥳','😮','😢','😡','🤔','👀','✅','🚀','💯','⭐','🎉'];
+
+  function closeEmojiPickers(exceptScope = null) {
+    [['live', els.liveEmojiPicker], ['details', els.detailsEmojiPicker]].forEach(([scope, picker]) => {
+      if (!picker || scope === exceptScope) return;
+      picker.classList.add('hidden');
+    });
+  }
+
+  function renderEmojiPicker(scope) {
+    const { picker } = getChatEls(scope);
+    if (!picker) return;
+    picker.innerHTML = CHAT_EMOJIS.map(emoji => `<button type="button" class="emoji-option" data-emoji="${emoji}" data-scope="${scope}">${emoji}</button>`).join('');
+  }
+
+  function insertEmoji(scope, emoji) {
+    const { input } = getChatEls(scope);
+    if (!input || input.disabled) return;
+    const start = input.selectionStart ?? input.value.length;
+    const end = input.selectionEnd ?? input.value.length;
+    input.value = `${input.value.slice(0, start)}${emoji}${input.value.slice(end)}`;
+    const nextPos = start + emoji.length;
+    input.setSelectionRange?.(nextPos, nextPos);
+    input.focus();
+  }
+
+  function toggleEmojiPicker(scope) {
+    const { picker } = getChatEls(scope);
+    if (!picker) return;
+    const isHidden = picker.classList.contains('hidden');
+    closeEmojiPickers(scope);
+    picker.classList.toggle('hidden', !isHidden);
+  }
+
+  function canModerateMessage(message) {
+    if (isAdminProfile()) return true;
+    return !!(state.activeProfile && message && String(message.author || '') === String(state.activeProfile.username || ''));
+  }
+
+  function renderChatMessages(target, messages, emptyText, scope) {
+    target.innerHTML = messages.length ? messages.map((m, index) => `
+      <div class="chat-message" data-msg-id="${escapeHtml(m.id || String(index))}" data-scope="${escapeHtml(scope)}">
         <img class="chat-avatar" src="${escapeHtml(m.avatar || 'assets/avatar-admin.svg')}" alt="${escapeHtml(m.author || 'Profil')}" />
         <div class="chat-bubble">
-          <div class="chat-bubble-head"><strong>${escapeHtml(m.author || 'Profil')}</strong><span>${escapeHtml(formatTime(m.createdAt || Date.now()))}</span></div>
+          <div class="chat-bubble-head"><strong>${escapeHtml(m.author || 'Profil')}</strong><span>${escapeHtml(formatTime(m.createdAt || Date.now()))}${m.editedAt ? '<span class="chat-edited-label">bearbeitet</span>' : ''}</span></div>
           <p>${escapeHtml(m.text || '')}</p>
+          ${canModerateMessage(m) ? `<div class="chat-message-actions"><button type="button" class="chat-action-btn" data-chat-action="edit" data-msg-id="${escapeHtml(m.id || String(index))}" data-scope="${escapeHtml(scope)}">Bearbeiten</button><button type="button" class="chat-action-btn" data-chat-action="delete" data-msg-id="${escapeHtml(m.id || String(index))}" data-scope="${escapeHtml(scope)}">Löschen</button></div>` : ''}
         </div>
       </div>`).join('') : `<div class="chat-empty">${escapeHtml(emptyText)}</div>`;
     target.scrollTop = target.scrollHeight;
@@ -1014,7 +1224,7 @@
     if (!chatEnabledForItem(item)) {
       label.textContent = 'Chat: deaktiviert';
       setChatStatus(scope, 'Chat ist aktuell nur für fest eingebaute UnrealTV-Inhalte aktiv.', 'warn');
-      renderChatMessages(target, [], 'Für diesen Inhalt ist aktuell kein Chat aktiv.');
+      renderChatMessages(target, [], 'Für diesen Inhalt ist aktuell kein Chat aktiv.', scope);
       updateChatFormState(scope, false, 'Chat für importierte Inhalte deaktiviert');
       return;
     }
@@ -1029,9 +1239,16 @@
         .onSnapshot(snapshot => {
           const messages = snapshot.docs.map(doc => {
             const d = doc.data() || {};
-            return { author: d.author, avatar: d.avatar, text: d.text, createdAt: d.createdAt?.toDate ? d.createdAt.toDate() : d.createdAt || Date.now() };
+            return {
+              id: doc.id,
+              author: d.author,
+              avatar: d.avatar,
+              text: d.text,
+              editedAt: d.editedAt?.toDate ? d.editedAt.toDate() : d.editedAt || null,
+              createdAt: d.createdAt?.toDate ? d.createdAt.toDate() : d.createdAt || Date.now()
+            };
           });
-          renderChatMessages(target, messages, 'Noch keine Nachrichten in diesem Raum.');
+          renderChatMessages(target, messages, 'Noch keine Nachrichten in diesem Raum.', scope);
         }, err => {
           console.error('Chat subscribe error', err);
           setChatStatus(scope, 'Firebase-Chat konnte nicht geladen werden. Demo-Modus aktiv.', 'warn');
@@ -1044,8 +1261,8 @@
 
     setChatStatus(scope, state.chat.reason || 'Demo-Chat aktiv.', 'info');
     const store = getDemoStore();
-    renderChatMessages(target, store[roomId] || [], 'Noch keine Nachrichten in diesem Raum.');
-    const refresh = () => renderChatMessages(target, getDemoStore()[roomId] || [], 'Noch keine Nachrichten in diesem Raum.');
+    renderChatMessages(target, store[roomId] || [], 'Noch keine Nachrichten in diesem Raum.', scope);
+    const refresh = () => renderChatMessages(target, getDemoStore()[roomId] || [], 'Noch keine Nachrichten in diesem Raum.', scope);
     window.addEventListener('storage', refresh);
     state.chat.unsubscribers[scope] = () => window.removeEventListener('storage', refresh);
   }
@@ -1054,7 +1271,7 @@
     if (!chatEnabledForItem(item) || !state.activeProfile) return;
     const clean = String(text || '').trim();
     if (!clean) return;
-    const message = { author: state.activeProfile.username, avatar: state.activeProfile.avatar, text: clean, createdAt: new Date() };
+    const message = { id: uniqueId('msg'), author: state.activeProfile.username, avatar: state.activeProfile.avatar, text: clean, createdAt: new Date() };
     const roomId = getRoomId(item, scope);
 
     if (state.chat.mode === 'firebase' && state.chat.firestore) {
@@ -1071,10 +1288,698 @@
     store[roomId] = list.slice(-100);
     saveDemoStore(store);
     const target = scope === 'live' ? els.liveChatMessages : els.detailsChatMessages;
-    renderChatMessages(target, store[roomId], 'Noch keine Nachrichten in diesem Raum.');
+    renderChatMessages(target, store[roomId], 'Noch keine Nachrichten in diesem Raum.', scope);
   }
 
-  function initChatBackend() {
+  async function editChatMessage(scope, messageId) {
+    const item = state.currentChatRoom[scope];
+    if (!item) return;
+    const roomId = getRoomId(item, scope);
+    let message = null;
+    if (state.chat.mode === 'firebase' && state.chat.firestore) {
+      const snap = await state.chat.firestore.collection('unrealtv_chat_rooms').doc(roomId).collection('messages').doc(messageId).get();
+      if (snap.exists) message = { id: snap.id, ...(snap.data() || {}) };
+    } else {
+      const store = getDemoStore();
+      message = safeArr(store[roomId]).find(entry => entry.id === messageId) || null;
+    }
+    if (!message || !canModerateMessage(message)) return;
+    const nextText = prompt('Nachricht bearbeiten:', message.text || '');
+    if (nextText == null) return;
+    const clean = String(nextText || '').trim();
+    if (!clean) return;
+
+    if (state.chat.mode === 'firebase' && state.chat.firestore) {
+      await state.chat.firestore.collection('unrealtv_chat_rooms').doc(roomId).collection('messages').doc(messageId).update({
+        text: clean,
+        editedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      return;
+    }
+
+    const store = getDemoStore();
+    store[roomId] = safeArr(store[roomId]).map(entry => entry.id === messageId ? { ...entry, text: clean, editedAt: new Date() } : entry);
+    saveDemoStore(store);
+    const target = scope === 'live' ? els.liveChatMessages : els.detailsChatMessages;
+    renderChatMessages(target, store[roomId], 'Noch keine Nachrichten in diesem Raum.', scope);
+  }
+
+  async function deleteChatMessage(scope, messageId) {
+    const item = state.currentChatRoom[scope];
+    if (!item || !confirm('Diese Nachricht wirklich löschen?')) return;
+    const roomId = getRoomId(item, scope);
+
+    if (state.chat.mode === 'firebase' && state.chat.firestore) {
+      const snap = await state.chat.firestore.collection('unrealtv_chat_rooms').doc(roomId).collection('messages').doc(messageId).get();
+      const message = snap.exists ? { id: snap.id, ...(snap.data() || {}) } : null;
+      if (!message || !canModerateMessage(message)) return;
+      await state.chat.firestore.collection('unrealtv_chat_rooms').doc(roomId).collection('messages').doc(messageId).delete();
+      return;
+    }
+
+    const store = getDemoStore();
+    const message = safeArr(store[roomId]).find(entry => entry.id === messageId) || null;
+    if (!message || !canModerateMessage(message)) return;
+    store[roomId] = safeArr(store[roomId]).filter(entry => entry.id !== messageId);
+    saveDemoStore(store);
+    const target = scope === 'live' ? els.liveChatMessages : els.detailsChatMessages;
+    renderChatMessages(target, store[roomId], 'Noch keine Nachrichten in diesem Raum.', scope);
+  }
+
+  function getCollectionByType(type) {
+    if (type === 'live') return state.liveChannels;
+    if (type === 'movies') return state.movies;
+    return state.series;
+  }
+
+  function setCollectionByType(type, value) {
+    if (type === 'live') state.liveChannels = value;
+    else if (type === 'movies') state.movies = value;
+    else state.series = value;
+  }
+
+  function getTypeLabel(type) {
+    return type === 'live' ? 'Live TV' : type === 'movies' ? 'Filme' : 'Serien';
+  }
+
+  function getItemLabel(item, type) {
+    return type === 'live' ? (item?.name || 'Sender') : (item?.title || 'Titel');
+  }
+
+  function ensureAdminSelection(typeKey, idKey) {
+    const type = state.adminSelections[typeKey] || 'live';
+    const list = getCollectionByType(type);
+    if (!list.length) {
+      state.adminSelections[idKey] = null;
+      return { type, item: null };
+    }
+    const currentId = state.adminSelections[idKey];
+    const current = list.find(entry => entry.id === currentId) || list[0];
+    state.adminSelections[idKey] = current.id;
+    return { type, item: current };
+  }
+
+  function countChatMessages() {
+    const store = getDemoStore();
+    return Object.values(store).reduce((sum, list) => sum + safeArr(list).length, 0);
+  }
+
+  function getChatAuthorStats() {
+    const stats = {};
+    Object.values(getDemoStore()).forEach(list => safeArr(list).forEach(message => {
+      const key = message.author || 'Unbekannt';
+      stats[key] = (stats[key] || 0) + 1;
+    }));
+    return Object.entries(stats).sort((a,b) => b[1]-a[1]);
+  }
+
+  function getAdminRooms() {
+    const store = getDemoStore();
+    return Object.keys(store).sort().map(roomId => ({ roomId, count: safeArr(store[roomId]).length }));
+  }
+
+  function refreshAllViews({ preserveLive = true } = {}) {
+    enrich();
+    renderHome();
+    renderCatalogs();
+    renderMyList();
+    renderHero();
+    applyTextOverrides();
+    renderChannels(state.currentView === 'live' ? (els.globalSearchInput?.value || '') : '');
+    if (preserveLive && state.currentLive) {
+      const live = state.liveChannels.find(ch => ch.id === state.currentLive.id);
+      if (live) selectLiveChannel(live.id, state.currentLiveSourceIndex || 0); else resetLivePanel();
+    }
+    if (state.currentDetails) {
+      const pool = state.currentDetails.type === 'Film' ? state.movies : state.series;
+      const found = pool.find(entry => entry.id === state.currentDetails.id);
+      if (found) openDetails(found); else closeDetails();
+    }
+    if (!state.currentDetails && !state.heroPaused) renderHero();
+    if (!els.adminPanel?.classList.contains('hidden')) renderAdminPanel();
+  }
+
+  function adminTextValue(key, fallback='') {
+    return state.textOverrides?.[key] ?? fallback;
+  }
+
+  function renderAdminOverviewTab() {
+    const authorStats = getChatAuthorStats();
+    return `
+      <div class="admin-grid">
+        <div class="admin-card"><div class="admin-stat-label">Profile</div><div class="admin-stat-value">${state.accounts.length}</div><div class="admin-help">Aktive Benutzerprofile in UnrealTV</div></div>
+        <div class="admin-card"><div class="admin-stat-label">Live TV</div><div class="admin-stat-value">${state.liveChannels.length}</div><div class="admin-help">Sender im aktuellen Katalog</div></div>
+        <div class="admin-card"><div class="admin-stat-label">Filme</div><div class="admin-stat-value">${state.movies.length}</div><div class="admin-help">Film-Einträge lokal gespeichert</div></div>
+        <div class="admin-card"><div class="admin-stat-label">Serien</div><div class="admin-stat-value">${state.series.length}</div><div class="admin-help">Serien-Einträge lokal gespeichert</div></div>
+        <div class="admin-card"><div class="admin-stat-label">Chat-Nachrichten</div><div class="admin-stat-value">${countChatMessages()}</div><div class="admin-help">Demo-Chat Nachrichten in localStorage</div></div>
+        <div class="admin-card"><div class="admin-stat-label">Meine Liste</div><div class="admin-stat-value">${state.myList.length}</div><div class="admin-help">Gespeicherte Titel des aktuellen Browsers</div></div>
+      </div>
+      <div class="admin-two-col" style="margin-top:16px;">
+        <div class="admin-list-card">
+          <h3>Top Chat-Autoren</h3>
+          <div class="admin-list">
+            ${authorStats.length ? authorStats.slice(0, 8).map(([name, count]) => `<div class="admin-list-item"><strong>${escapeHtml(name)}</strong><span class="admin-list-meta">${count} Nachrichten</span></div>`).join('') : '<div class="admin-empty">Noch keine Chat-Aktivität vorhanden.</div>'}
+          </div>
+        </div>
+        <div class="admin-list-card">
+          <h3>Schnellzugriff</h3>
+          <div class="admin-help">Hier kannst du sofort Inhalte ergänzen, URLs anpassen und Texte umbenennen – ohne die Website optisch umzubauen.</div>
+          <div class="admin-actions">
+            <button type="button" class="ghost-btn" data-admin-jump="quickaccess">Schnellzugriff bearbeiten</button>
+            <button type="button" class="ghost-btn" data-admin-jump="content">Inhalt bearbeiten</button>
+            <button type="button" class="ghost-btn" data-admin-jump="streams">Stream URLs ändern</button>
+            <button type="button" class="ghost-btn" data-admin-jump="texts">Website-Texte ändern</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  
+  function renderAdminQuickAccessTab() {
+    const quickLimit = Math.max(1, Math.min(20, Number(state.quickAccessSettings?.limit || 4)));
+    const rows = state.liveChannels.map((channel, index) => `
+      <label class="admin-qa-row">
+        <div class="admin-qa-meta">
+          ${channel.logoUrl ? `<img class="admin-qa-logo" src="${escapeHtml(channel.logoUrl)}" alt="${escapeHtml(channel.name)} Logo" loading="lazy" />` : `<div class="admin-qa-logo fallback">${escapeHtml(channel.logo || initials(channel.name || '?'))}</div>`}
+          <div class="admin-qa-copy">
+            <strong>${escapeHtml(channel.name)}</strong>
+            <span>${escapeHtml(channel.group || 'Live TV')}</span>
+          </div>
+        </div>
+        <input type="checkbox" class="admin-qa-checkbox" data-qa-id="${escapeHtml(channel.id)}" ${channel.quickAccess ? 'checked' : ''} />
+      </label>
+    `).join('');
+
+    return `
+      <form id="adminQuickAccessForm" class="admin-form admin-form-wide">
+        <h3>Schnellzugriff auf der Home-Seite</h3>
+        <div class="admin-help">Hier bestimmst du direkt im Admin Panel, welche Sender auf der Home-Seite unter „Schnellzugriff“ erscheinen und wie viele davon gezeigt werden.</div>
+
+        <label for="adminQuickAccessLimit">Wie viele Sender anzeigen?</label>
+        <input id="adminQuickAccessLimit" type="number" min="1" max="20" value="${quickLimit}" />
+
+        <div class="admin-help">Aktuell markierte Sender werden in der Reihenfolge deiner Live-TV-Liste angezeigt.</div>
+
+        <div class="admin-qa-list">
+          ${rows || '<div class="admin-empty">Keine Live-TV-Sender vorhanden.</div>'}
+        </div>
+
+        <div class="admin-actions">
+          <button type="submit" class="primary-btn">Schnellzugriff speichern</button>
+          <button type="button" class="ghost-btn" id="adminQuickAccessSelectTopBtn">Erste Sender markieren</button>
+          <button type="button" class="ghost-btn" id="adminQuickAccessClearBtn">Alle entfernen</button>
+        </div>
+      </form>
+    `;
+  }
+
+function renderAdminContentTab() {
+    const { type, item } = ensureAdminSelection('contentType', 'contentId');
+    const list = getCollectionByType(type);
+    const options = list.map(entry => `<option value="${escapeHtml(entry.id)}" ${item && entry.id === item.id ? 'selected' : ''}>${escapeHtml(getItemLabel(entry, type))}</option>`).join('');
+    const isLive = type === 'live';
+    return `
+      <div class="admin-two-col">
+        <form id="adminEditContentForm" class="admin-form">
+          <h3>Bestehenden Inhalt bearbeiten</h3>
+          <label for="adminContentType">Bereich</label>
+          <select id="adminContentType"><option value="live" ${type === 'live' ? 'selected' : ''}>Live TV</option><option value="movies" ${type === 'movies' ? 'selected' : ''}>Filme</option><option value="series" ${type === 'series' ? 'selected' : ''}>Serien</option></select>
+          <label for="adminContentItem">Eintrag</label>
+          <select id="adminContentItem">${options}</select>
+          ${item ? `
+            <label>${isLive ? 'Sendername' : 'Titel'}</label>
+            <input id="adminEditTitle" value="${escapeHtml(isLive ? item.name : item.title)}" />
+            <label>${isLive ? 'Kategorie' : 'Beschreibung'}</label>
+            ${isLive ? `<input id="adminEditPrimary" value="${escapeHtml(item.group || '')}" />` : `<textarea id="adminEditPrimary">${escapeHtml(item.description || '')}</textarea>`}
+            <label>${isLive ? 'Logo Text' : 'Genres (mit Komma)'}</label>
+            <input id="adminEditSecondary" value="${escapeHtml(isLive ? (item.logo || '') : safeArr(item.genre).join(', '))}" />
+            <label>${isLive ? 'Logo URL' : 'Jahr'}</label>
+            <input id="adminEditTertiary" value="${escapeHtml(isLive ? (item.logoUrl || '') : (item.year || ''))}" />
+            ${isLive ? `<label class="admin-check"><input id="adminEditQuickAccess" type="checkbox" ${item.quickAccess ? 'checked' : ''} /> <span>Im Schnellzugriff auf der Home-Seite anzeigen</span></label>` : ''}
+            ${type === 'movies' ? `<label>Dauer</label><input id="adminEditDuration" value="${escapeHtml(item.duration || '')}" />` : ''}
+            ${type === 'series' ? `<label>Staffeln</label><input id="adminEditSeasons" type="number" min="1" value="${escapeHtml(item.seasons || 1)}" /><label>Episoden</label><input id="adminEditEpisodes" type="number" min="1" value="${escapeHtml(item.episodes || 1)}" />` : ''}
+            ${!isLive ? `<label>Rating</label><input id="adminEditRating" value="${escapeHtml(item.rating || '')}" /><label>Qualität</label><input id="adminEditQuality" value="${escapeHtml(item.quality || '')}" /><label>Cover / Poster URL</label><input id="adminEditPoster" value="${escapeHtml(item.logo || '')}" placeholder="https://...jpg" /><input type="file" id="adminEditPosterUpload" data-target-input="adminEditPoster" accept="image/*" /><label>Backdrop URL</label><input id="adminEditBackdrop" value="${escapeHtml(item.backdrop || '')}" placeholder="https://...jpg" /><input type="file" id="adminEditBackdropUpload" data-target-input="adminEditBackdrop" accept="image/*" />` : ''}
+            <div class="admin-actions">
+              <button type="submit" class="primary-btn">Änderungen speichern</button>
+              <button type="button" class="ghost-btn admin-danger" id="adminDeleteContentBtn">Eintrag löschen</button>
+            </div>
+          ` : '<div class="admin-empty">Kein Eintrag vorhanden.</div>'}
+        </form>
+        <form id="adminAddContentForm" class="admin-form">
+          <h3>Neuen Inhalt hinzufügen</h3>
+          <label for="adminAddType">Bereich</label>
+          <select id="adminAddType"><option value="live">Live TV</option><option value="movies">Film</option><option value="series">Serie</option></select>
+          <label for="adminAddTitle">Titel / Sendername</label>
+          <input id="adminAddTitle" placeholder="z. B. Kino Plus HD" required />
+          <label for="adminAddDescription">Beschreibung</label>
+          <textarea id="adminAddDescription" placeholder="Kurze Beschreibung"></textarea>
+          <label for="adminAddStream">Stream URL</label>
+          <input id="adminAddStream" placeholder="https://...m3u8" required />
+          <label for="adminAddPoster">Poster / Logo URL</label>
+          <input id="adminAddPoster" placeholder="https://...jpg" />
+          <input type="file" id="adminAddPosterUpload" data-target-input="adminAddPoster" accept="image/*" />
+          <label for="adminAddBackdrop">Backdrop URL</label>
+          <input id="adminAddBackdrop" placeholder="https://...jpg" />
+          <input type="file" id="adminAddBackdropUpload" data-target-input="adminAddBackdrop" accept="image/*" />
+          <label for="adminAddExtra">Genre / Kategorie</label>
+          <input id="adminAddExtra" placeholder="Action, Drama oder Entertainment" />
+          <label class="admin-check"><input id="adminAddQuickAccess" type="checkbox" /> <span>Bei Live TV im Schnellzugriff anzeigen</span></label>
+          <div class="admin-actions"><button type="submit" class="primary-btn">Neuen Eintrag anlegen</button></div>
+          <div class="admin-upload-note">Tipp: Du kannst Poster und Backdrops direkt als lokale Datei auswählen. Sie werden lokal im Browser gespeichert.</div>
+        </form>
+      </div>`;
+  }
+
+  function renderAdminStreamsTab() {
+    const { type, item } = ensureAdminSelection('streamType', 'streamId');
+    const list = getCollectionByType(type);
+    const options = list.map(entry => `<option value="${escapeHtml(entry.id)}" ${item && entry.id === item.id ? 'selected' : ''}>${escapeHtml(getItemLabel(entry, type))}</option>`).join('');
+    const epgText = type === 'live' ? safeArr(item?.epg).map(entry => `${entry.start || ''}|${entry.end || ''}|${entry.title || ''}`).join('\n') : '';
+    return `
+      <form id="adminStreamsForm" class="admin-form">
+        <h3>Streams & Media Assets</h3>
+        <label for="adminStreamType">Bereich</label>
+        <select id="adminStreamType"><option value="live" ${type === 'live' ? 'selected' : ''}>Live TV</option><option value="movies" ${type === 'movies' ? 'selected' : ''}>Filme</option><option value="series" ${type === 'series' ? 'selected' : ''}>Serien</option></select>
+        <label for="adminStreamItem">Eintrag</label>
+        <select id="adminStreamItem">${options}</select>
+        ${item ? `
+          <label for="adminStreamUrl">Primäre Stream URL</label>
+          <input id="adminStreamUrl" value="${escapeHtml(item.streamUrl || '')}" placeholder="https://...m3u8" />
+          <label for="adminStreamEmbed">Embed / Iframe Code oder URL</label>
+          <textarea id="adminStreamEmbed" placeholder="Optionaler Embed Code">${escapeHtml(item.embed || item.embedCode || item.iframe || '')}</textarea>
+          <label for="adminLogoUrl">Poster / Logo URL</label>
+          <input id="adminLogoUrl" value="${escapeHtml(item.logo || item.logoUrl || '')}" />
+          <input type="file" id="adminLogoUpload" data-target-input="adminLogoUrl" accept="image/*" />
+          <label for="adminBackdropUrl">Backdrop URL</label>
+          <input id="adminBackdropUrl" value="${escapeHtml(item.backdrop || item.artwork || '')}" />
+          <input type="file" id="adminBackdropUpload" data-target-input="adminBackdropUrl" accept="image/*" />
+          ${type === 'live' ? `<label for="adminLiveGroup">Sender-Kategorie</label><input id="adminLiveGroup" value="${escapeHtml(item.group || '')}" /><label for="adminLiveLogoUrl">Sender-Logo URL</label><input id="adminLiveLogoUrl" value="${escapeHtml(item.logoUrl || '')}" /><label class="admin-check"><input id="adminLiveQuickAccess" type="checkbox" ${item.quickAccess ? 'checked' : ''} /> <span>Im Schnellzugriff auf der Home-Seite anzeigen</span></label><label for="adminLiveEpg">EPG (eine Zeile: Start|Ende|Titel)</label><textarea id="adminLiveEpg">${escapeHtml(epgText)}</textarea>` : ''}
+          <div class="admin-actions"><button type="submit" class="primary-btn">Streams speichern</button></div>
+        ` : '<div class="admin-empty">Kein Eintrag vorhanden.</div>'}
+      </form>`;
+  }
+
+  function renderAdminTextsTab() {
+    return `
+      <form id="adminTextsForm" class="admin-form">
+        <h3>Website-Texte bearbeiten</h3>
+        <div class="admin-grid">
+          <div>
+            <label>App Titel (Browser Tab)</label>
+            <input id="adminTextAppTitle" value="${escapeHtml(adminTextValue('appTitle', 'UnrealTV'))}" />
+          </div>
+          <div>
+            <label>Brand Text</label>
+            <input id="adminTextBrand" value="${escapeHtml(adminTextValue('brandText', 'UNREALTV'))}" />
+          </div>
+          <div><label>Navigation Home</label><input id="adminTextNavHome" value="${escapeHtml(adminTextValue('navHome', 'Home'))}" /></div>
+          <div><label>Navigation Live TV</label><input id="adminTextNavLive" value="${escapeHtml(adminTextValue('navLive', 'Live TV'))}" /></div>
+          <div><label>Navigation Serien</label><input id="adminTextNavSeries" value="${escapeHtml(adminTextValue('navSeries', 'Serien'))}" /></div>
+          <div><label>Navigation Filme</label><input id="adminTextNavMovies" value="${escapeHtml(adminTextValue('navMovies', 'Filme'))}" /></div>
+          <div><label>Navigation Meine Liste</label><input id="adminTextNavMyList" value="${escapeHtml(adminTextValue('navMyList', 'Meine Liste'))}" /></div>
+          <div><label>Import Drawer Titel</label><input id="adminTextImportTitle" value="${escapeHtml(adminTextValue('importTitle', 'Listen importieren'))}" /></div>
+          <div><label>Live TV Überschrift</label><input id="adminTextLiveHeading" value="${escapeHtml(adminTextValue('liveHeading', 'Sender, Streams & EPG'))}" /></div>
+          <div><label>Serien Überschrift</label><input id="adminTextSeriesHeading" value="${escapeHtml(adminTextValue('seriesHeading', 'Serien-Bibliothek'))}" /></div>
+          <div><label>Filme Überschrift</label><input id="adminTextMoviesHeading" value="${escapeHtml(adminTextValue('moviesHeading', 'Film-Bibliothek'))}" /></div>
+          <div><label>Meine Liste Überschrift</label><input id="adminTextMyListHeading" value="${escapeHtml(adminTextValue('myListHeading', 'Gespeicherte Titel'))}" /></div>
+          <div><label>Live Chat Titel</label><input id="adminTextLiveChatTitle" value="${escapeHtml(adminTextValue('liveChatTitle', 'Live Chat'))}" /></div>
+          <div><label>Titel Chat Titel</label><input id="adminTextDetailsChatTitle" value="${escapeHtml(adminTextValue('detailsChatTitle', 'Titel-Chat'))}" /></div>
+        </div>
+        <div class="admin-actions">
+          <button type="submit" class="primary-btn">Texte speichern</button>
+          <button type="button" id="adminResetTextsBtn" class="ghost-btn">Texte zurücksetzen</button>
+        </div>
+      </form>`;
+  }
+
+  function renderAdminUsersTab() {
+    return `
+      <div class="admin-two-col">
+        <div class="admin-list-card">
+          <h3>Profile & Nutzer</h3>
+          <div class="admin-list">
+            ${state.accounts.map(account => `<div class="admin-list-item"><div class="admin-user-chip"><img src="${escapeHtml(account.avatar || 'assets/avatar-admin.svg')}" alt="${escapeHtml(account.username)}" /><div><strong>${escapeHtml(account.username)}</strong><div class="admin-list-meta">Passwort: ${escapeHtml(account.password || '—')}</div></div></div>${String(account.username).toLowerCase() !== 'admin' ? `<button type="button" class="ghost-btn admin-danger" data-delete-user="${escapeHtml(account.username)}">Löschen</button>` : '<span class="badge">Admin</span>'}</div>`).join('')}
+          </div>
+        </div>
+        <form id="adminAddUserForm" class="admin-form">
+          <h3>Neues Profil anlegen</h3>
+          <label>Benutzername</label>
+          <input id="adminNewUsername" required />
+          <label>Passwort</label>
+          <input id="adminNewPassword" required />
+          <label>Avatar URL</label>
+          <input id="adminNewAvatar" placeholder="assets/avatar-admin.svg oder https://..." />
+          <label>Farbe</label>
+          <input id="adminNewColor" placeholder="#e50914" />
+          <div class="admin-actions"><button type="submit" class="primary-btn">Profil hinzufügen</button></div>
+          <div class="admin-upload-note">Diese Profile werden lokal im Browser gespeichert und erscheinen direkt im Login-Screen.</div>
+        </form>
+      </div>`;
+  }
+
+  function renderAdminChatTab() {
+    const rooms = getAdminRooms();
+    return `
+      <div class="admin-list-card">
+        <h3>Chat Moderation</h3>
+        <div class="admin-help">Als Admin kannst du Nachrichten direkt im Live-Chat oder Titel-Chat bearbeiten und löschen. Hier siehst du zusätzlich die Räume im lokalen Demo-Chat.</div>
+        <div class="admin-list" style="margin-top:16px;">
+          ${rooms.length ? rooms.map(room => `<div class="admin-room-row"><div><strong>${escapeHtml(room.roomId)}</strong><div class="admin-list-meta">${room.count} Nachrichten</div></div><button type="button" class="ghost-btn admin-danger" data-clear-room="${escapeHtml(room.roomId)}">Raum leeren</button></div>`).join('') : '<div class="admin-empty">Noch keine lokalen Chat-Räume vorhanden.</div>'}
+        </div>
+      </div>`;
+  }
+
+  
+  async function saveAdminQuickAccess() {
+    const limit = Math.max(1, Math.min(20, Number(document.getElementById('adminQuickAccessLimit')?.value || 4)));
+    const selectedIds = [...document.querySelectorAll('[data-qa-id]:checked')].map(el => el.dataset.qaId);
+    state.quickAccessSettings = { limit };
+    state.liveChannels = state.liveChannels.map(channel => ({ ...channel, quickAccess: selectedIds.includes(channel.id) }));
+    await commitSiteChanges({ message: 'Schnellzugriff gespeichert.', alertUser: true });
+  }
+
+  function setAdminQuickAccessTop() {
+    const limit = Math.max(1, Math.min(20, Number(document.getElementById('adminQuickAccessLimit')?.value || 4)));
+    state.liveChannels = state.liveChannels.map((channel, index) => ({ ...channel, quickAccess: index < limit }));
+    commitSiteChanges({ message: 'Schnellzugriff aktualisiert.', alertUser: false });
+  }
+
+  function clearAdminQuickAccess() {
+    state.liveChannels = state.liveChannels.map(channel => ({ ...channel, quickAccess: false }));
+    commitSiteChanges({ message: 'Schnellzugriff aktualisiert.', alertUser: false });
+  }
+
+function renderAdminPanel() {
+    if (!els.adminPanelBody) return;
+    document.querySelectorAll('.admin-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.adminTab === state.adminTab));
+    if (state.adminTab === 'quickaccess') els.adminPanelBody.innerHTML = renderAdminQuickAccessTab();
+    else if (state.adminTab === 'content') els.adminPanelBody.innerHTML = renderAdminContentTab();
+    else if (state.adminTab === 'streams') els.adminPanelBody.innerHTML = renderAdminStreamsTab();
+    else if (state.adminTab === 'texts') els.adminPanelBody.innerHTML = renderAdminTextsTab();
+    else if (state.adminTab === 'users') els.adminPanelBody.innerHTML = renderAdminUsersTab();
+    else if (state.adminTab === 'chat') els.adminPanelBody.innerHTML = renderAdminChatTab();
+    else els.adminPanelBody.innerHTML = renderAdminOverviewTab();
+    els.adminPanel?.setAttribute('aria-hidden', 'false');
+  }
+
+  function openAdminPanel(tab = state.adminTab || 'overview') {
+    if (!isAdminProfile()) return;
+    state.adminTab = tab;
+    els.adminPanelBackdrop?.classList.remove('hidden');
+    els.adminPanel?.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    renderAdminPanel();
+  }
+
+  function closeAdminPanel() {
+    els.adminPanelBackdrop?.classList.add('hidden');
+    els.adminPanel?.classList.add('hidden');
+    els.adminPanel?.setAttribute('aria-hidden', 'true');
+    if (!els.detailsModal || els.detailsModal.classList.contains('hidden')) document.body.style.overflow = '';
+  }
+
+  function readFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function handleAdminFileUpload(input) {
+    const targetId = input?.dataset?.targetInput;
+    const file = input?.files?.[0];
+    if (!targetId || !file) return;
+    const target = document.getElementById(targetId);
+    if (!target) return;
+    target.value = await readFileAsDataUrl(file);
+  }
+
+  async function saveEditedAdminContent() {
+    const type = state.adminSelections.contentType;
+    const id = state.adminSelections.contentId;
+    const list = getCollectionByType(type).map(entry => {
+      if (entry.id !== id) return entry;
+      if (type === 'live') {
+        return { ...entry, name: document.getElementById('adminEditTitle')?.value.trim() || entry.name, group: document.getElementById('adminEditPrimary')?.value.trim() || '', logo: document.getElementById('adminEditSecondary')?.value.trim() || entry.logo, logoUrl: document.getElementById('adminEditTertiary')?.value.trim() || entry.logoUrl, quickAccess: !!document.getElementById('adminEditQuickAccess')?.checked };
+      }
+      const base = { ...entry, title: document.getElementById('adminEditTitle')?.value.trim() || entry.title, description: document.getElementById('adminEditPrimary')?.value.trim() || entry.description, genre: splitTags(document.getElementById('adminEditSecondary')?.value.trim() || entry.genre), year: document.getElementById('adminEditTertiary')?.value.trim() || entry.year, rating: document.getElementById('adminEditRating')?.value.trim() || entry.rating, quality: document.getElementById('adminEditQuality')?.value.trim() || entry.quality, logo: document.getElementById('adminEditPoster')?.value.trim() || entry.logo, backdrop: document.getElementById('adminEditBackdrop')?.value.trim() || entry.backdrop };
+      if (type === 'movies') base.duration = document.getElementById('adminEditDuration')?.value.trim() || entry.duration;
+      if (type === 'series') {
+        base.seasons = Number(document.getElementById('adminEditSeasons')?.value || entry.seasons || 1);
+        base.episodes = Number(document.getElementById('adminEditEpisodes')?.value || entry.episodes || 1);
+      }
+      return base;
+    });
+    setCollectionByType(type, list);
+    await commitSiteChanges({ message: 'Inhalt gespeichert.' });
+  }
+
+  async function addAdminContent() {
+    const type = document.getElementById('adminAddType')?.value || 'live';
+    const title = document.getElementById('adminAddTitle')?.value.trim();
+    const description = document.getElementById('adminAddDescription')?.value.trim();
+    const streamUrl = document.getElementById('adminAddStream')?.value.trim();
+    const poster = document.getElementById('adminAddPoster')?.value.trim();
+    const backdrop = document.getElementById('adminAddBackdrop')?.value.trim();
+    const extra = document.getElementById('adminAddExtra')?.value.trim();
+    if (!title || !streamUrl) return alert('Bitte mindestens Titel und Stream URL eintragen.');
+    let item;
+    if (type === 'live') {
+      item = { id: uniqueId('ch'), name: title, group: extra || 'Entertainment', logo: initials(title), logoUrl: poster || '', streamUrl, backdrop: backdrop || 'assets/live-poster.svg', artwork: backdrop || 'assets/live-poster.svg', epg: [], source: 'builtin', chatEnabled: true, quickAccess: !!document.getElementById('adminAddQuickAccess')?.checked, sources: [{ id: 'source-1', label: 'Stream 1', streamUrl }] };
+    } else if (type === 'movies') {
+      item = { id: uniqueId('movie'), type: 'Film', title, year: new Date().getFullYear(), duration: '—', rating: '—', quality: 'HD', genre: splitTags(extra || 'Drama'), description: description || 'Neuer Film.', backdrop: backdrop || poster || 'assets/movie-1.svg', logo: poster || backdrop || 'assets/movie-1.svg', streamUrl, source: 'builtin', chatEnabled: true };
+    } else {
+      item = { id: uniqueId('series'), type: 'Serie', title, year: new Date().getFullYear(), seasons: 1, episodes: 8, rating: '—', quality: 'HD', genre: splitTags(extra || 'Drama'), description: description || 'Neue Serie.', backdrop: backdrop || poster || 'assets/series-1.svg', logo: poster || backdrop || 'assets/series-1.svg', streamUrl, source: 'builtin', chatEnabled: true };
+    }
+    setCollectionByType(type, [...getCollectionByType(type), item]);
+    state.adminSelections.contentType = type;
+    state.adminSelections.contentId = item.id;
+    state.adminSelections.streamType = type;
+    state.adminSelections.streamId = item.id;
+    await commitSiteChanges({ message: 'Neuer Eintrag angelegt.', openLiveId: type === 'live' ? item.id : null, preserveLive: type !== 'live' });
+  }
+
+  async function deleteSelectedAdminContent() {
+    const type = state.adminSelections.contentType;
+    const id = state.adminSelections.contentId;
+    if (!id || !confirm('Diesen Eintrag wirklich löschen?')) return;
+    setCollectionByType(type, getCollectionByType(type).filter(entry => entry.id !== id));
+    state.adminSelections.contentId = null;
+    await commitSiteChanges({ message: 'Eintrag gelöscht.', alertUser: false });
+  }
+
+  async function saveAdminStreams() {
+    const type = state.adminSelections.streamType;
+    const id = state.adminSelections.streamId;
+    const list = getCollectionByType(type).map(entry => {
+      if (entry.id !== id) return entry;
+      const base = { ...entry, streamUrl: document.getElementById('adminStreamUrl')?.value.trim() || '', embed: document.getElementById('adminStreamEmbed')?.value.trim() || '', embedCode: document.getElementById('adminStreamEmbed')?.value.trim() || '', logo: document.getElementById('adminLogoUrl')?.value.trim() || entry.logo, backdrop: document.getElementById('adminBackdropUrl')?.value.trim() || entry.backdrop };
+      if (type === 'live') {
+        base.artwork = document.getElementById('adminBackdropUrl')?.value.trim() || entry.artwork || entry.backdrop;
+        base.group = document.getElementById('adminLiveGroup')?.value.trim() || entry.group;
+        base.logoUrl = document.getElementById('adminLiveLogoUrl')?.value.trim() || entry.logoUrl;
+        base.quickAccess = !!document.getElementById('adminLiveQuickAccess')?.checked;
+        base.epg = String(document.getElementById('adminLiveEpg')?.value || '').split('\n').map(line => line.trim()).filter(Boolean).map(line => {
+          const [start, end, ...title] = line.split('|');
+          return { start: (start || '').trim(), end: (end || '').trim(), title: title.join('|').trim() || 'Programm' };
+        });
+        base.sources = normalizeLiveSources({ ...base, sources: [{ label: 'Stream 1', streamUrl: base.streamUrl, embed: base.embed }] });
+      }
+      return base;
+    });
+    setCollectionByType(type, list);
+    await commitSiteChanges({ message: 'Streams gespeichert.', openLiveId: type === 'live' ? id : null, preserveLive: type !== 'live' });
+  }
+
+  async function saveAdminTexts() {
+    state.textOverrides = {
+      appTitle: document.getElementById('adminTextAppTitle')?.value.trim() || 'UnrealTV',
+      brandText: document.getElementById('adminTextBrand')?.value.trim() || 'UNREALTV',
+      navHome: document.getElementById('adminTextNavHome')?.value.trim() || 'Home',
+      navLive: document.getElementById('adminTextNavLive')?.value.trim() || 'Live TV',
+      navSeries: document.getElementById('adminTextNavSeries')?.value.trim() || 'Serien',
+      navMovies: document.getElementById('adminTextNavMovies')?.value.trim() || 'Filme',
+      navMyList: document.getElementById('adminTextNavMyList')?.value.trim() || 'Meine Liste',
+      importTitle: document.getElementById('adminTextImportTitle')?.value.trim() || 'Listen importieren',
+      liveHeading: document.getElementById('adminTextLiveHeading')?.value.trim() || 'Sender, Streams & EPG',
+      seriesHeading: document.getElementById('adminTextSeriesHeading')?.value.trim() || 'Serien-Bibliothek',
+      moviesHeading: document.getElementById('adminTextMoviesHeading')?.value.trim() || 'Film-Bibliothek',
+      myListHeading: document.getElementById('adminTextMyListHeading')?.value.trim() || 'Gespeicherte Titel',
+      liveChatTitle: document.getElementById('adminTextLiveChatTitle')?.value.trim() || 'Live Chat',
+      detailsChatTitle: document.getElementById('adminTextDetailsChatTitle')?.value.trim() || 'Titel-Chat'
+    };
+    persistTextOverrides();
+    applyTextOverrides();
+    renderAdminPanel();
+    await saveRemoteSiteState();
+    alert('Texte gespeichert.');
+  }
+
+  async function resetAdminTexts() {
+    state.textOverrides = {};
+    localStorage.removeItem(STORAGE.texts);
+    applyTextOverrides();
+    renderAdminPanel();
+    await saveRemoteSiteState();
+    alert('Texte zurückgesetzt.');
+  }
+
+  async function addAdminUser() {
+    const username = document.getElementById('adminNewUsername')?.value.trim();
+    const password = document.getElementById('adminNewPassword')?.value.trim();
+    const avatar = document.getElementById('adminNewAvatar')?.value.trim() || 'assets/avatar-admin.svg';
+    const color = document.getElementById('adminNewColor')?.value.trim() || '#e50914';
+    if (!username || !password) return alert('Bitte Benutzername und Passwort angeben.');
+    if (state.accounts.some(account => String(account.username).toLowerCase() === username.toLowerCase())) return alert('Dieser Benutzer existiert bereits.');
+    state.accounts = [...state.accounts, { username, password, avatar, color }];
+    persistAccounts();
+    renderProfiles();
+    renderAdminPanel();
+    await saveRemoteSiteState();
+    alert('Profil hinzugefügt.');
+  }
+
+  async function deleteAdminUser(username) {
+    if (!username || String(username).toLowerCase() === 'admin') return;
+    if (!confirm(`Profil ${username} löschen?`)) return;
+    state.accounts = state.accounts.filter(account => account.username !== username);
+    persistAccounts();
+    renderProfiles();
+    renderAdminPanel();
+    await saveRemoteSiteState();
+  }
+
+  function clearAdminRoom(roomId) {
+    if (!roomId || !confirm(`Alle Nachrichten aus ${roomId} löschen?`)) return;
+    const store = getDemoStore();
+    delete store[roomId];
+    saveDemoStore(store);
+    ['live', 'details'].forEach(scope => {
+      const current = state.currentChatRoom[scope];
+      if (current && getRoomId(current, scope) === roomId) subscribeToRoom(scope, current);
+    });
+    renderAdminPanel();
+  }
+  
+  function getSiteStateRef() {
+    const db = state.siteSync.firestore || state.chat.firestore;
+    return db ? db.collection('unrealtv_site_state').doc('main') : null;
+  }
+
+  function buildRemoteSitePayload() {
+    return {
+      liveChannels: state.liveChannels,
+      movies: state.movies,
+      series: state.series,
+      accounts: state.accounts,
+      textOverrides: state.textOverrides,
+      quickAccessSettings: state.quickAccessSettings,
+      updatedAt: firebase?.firestore?.FieldValue?.serverTimestamp ? firebase.firestore.FieldValue.serverTimestamp() : new Date()
+    };
+  }
+
+  function stableSitePayloadHash(payload) {
+    try {
+      return JSON.stringify({
+        liveChannels: payload.liveChannels || [],
+        movies: payload.movies || [],
+        series: payload.series || [],
+        accounts: payload.accounts || [],
+        textOverrides: payload.textOverrides || {},
+        quickAccessSettings: payload.quickAccessSettings || {}
+      });
+    } catch {
+      return '';
+    }
+  }
+
+  function applyRemoteSitePayload(data) {
+    if (!data || typeof data !== 'object') return;
+    state.siteSync.applyingRemote = true;
+    try {
+      if (Array.isArray(data.liveChannels)) state.liveChannels = data.liveChannels;
+      if (Array.isArray(data.movies)) state.movies = data.movies;
+      if (Array.isArray(data.series)) state.series = data.series;
+      if (Array.isArray(data.accounts) && data.accounts.length) state.accounts = data.accounts;
+      if (data.textOverrides && typeof data.textOverrides === 'object') state.textOverrides = data.textOverrides;
+      if (data.quickAccessSettings && typeof data.quickAccessSettings === 'object') state.quickAccessSettings = data.quickAccessSettings;
+      enrich();
+      renderProfiles();
+      refreshAllViews();
+      applyTextOverrides();
+      if (state.activeProfile) {
+        const refreshedProfile = state.accounts.find(acc => acc.username === state.activeProfile.username);
+        if (refreshedProfile) state.activeProfile = refreshedProfile;
+        updateActiveProfileUI();
+      }
+    } finally {
+      state.siteSync.applyingRemote = false;
+    }
+  }
+
+  async function saveRemoteSiteState() {
+    const ref = getSiteStateRef();
+    if (!ref) {
+      setStatus('Änderungen lokal gespeichert. Firebase-Sync ist nicht verfügbar.', 'warn');
+      return false;
+    }
+    try {
+      const payload = buildRemoteSitePayload();
+      const hash = stableSitePayloadHash(payload);
+      state.siteSync.lastRemoteHash = hash;
+      await ref.set(payload, { merge: true });
+      setStatus('Änderungen wurden direkt live gespeichert und online synchronisiert.', 'success');
+      return true;
+    } catch (err) {
+      console.error('Remote Site Save Fehler:', err);
+      setStatus(`Änderungen lokal gespeichert. Online-Sync fehlgeschlagen: ${err.message || 'Unbekannter Fehler'}`, 'warn');
+      return false;
+    }
+  }
+
+  async function initSiteSync() {
+    const ref = getSiteStateRef();
+    if (!ref || state.siteSync.unsub) return;
+    state.siteSync.enabled = true;
+    try {
+      const firstSnap = await ref.get();
+      if (firstSnap.exists) {
+        const data = firstSnap.data() || {};
+        const hash = stableSitePayloadHash(data);
+        if (hash && hash !== state.siteSync.lastRemoteHash) {
+          state.siteSync.lastRemoteHash = hash;
+          applyRemoteSitePayload(data);
+        }
+      }
+      state.siteSync.unsub = ref.onSnapshot(snap => {
+        if (!snap.exists) return;
+        const data = snap.data() || {};
+        const hash = stableSitePayloadHash(data);
+        if (!hash || hash === state.siteSync.lastRemoteHash || state.siteSync.applyingRemote) return;
+        state.siteSync.lastRemoteHash = hash;
+        applyRemoteSitePayload(data);
+      });
+    } catch (err) {
+      console.error('Site Sync Init Fehler:', err);
+      setStatus(`Online-Sync nicht verfügbar: ${err.message || 'Unbekannter Fehler'}`, 'warn');
+    }
+  }
+
+  async function commitSiteChanges({ message = '', openLiveId = null, preserveLive = true, alertUser = true } = {}) {
+    renderProfiles();
+    refreshAllViews({ preserveLive });
+    if (openLiveId) {
+      switchView('live');
+      renderChannels('');
+      selectLiveChannel(openLiveId);
+    }
+    await saveRemoteSiteState();
+    if (message && alertUser) alert(message);
+  }
+
+function initChatBackend() {
     state.chat.mode = 'demo';
     state.chat.firestore = null;
     state.chat.reason = 'Demo-Chat aktiv. Nachrichten sind nur lokal sichtbar.';
@@ -1094,6 +1999,7 @@
       }
       if (!firebase.apps.length) firebase.initializeApp(window.UNREAL_FIREBASE_CONFIG);
       state.chat.firestore = firebase.firestore();
+      state.siteSync.firestore = state.chat.firestore;
       state.chat.mode = 'firebase';
       state.chat.reason = 'Realtime-Chat über Firebase aktiv.';
       console.log('Firebase Chat bereit.');
@@ -1111,17 +2017,33 @@
     els.closePasswordOverlay.addEventListener('click', () => els.passwordOverlay.classList.add('hidden'));
     els.closeDetailsModal.addEventListener('click', closeDetails);
     els.closeEpisodesModal?.addEventListener('click', closeEpisodesModal);
+    els.closeAdminPanel?.addEventListener('click', closeAdminPanel);
+    els.adminPanelBackdrop?.addEventListener('click', closeAdminPanel);
+    els.adminToggle?.addEventListener('click', () => openAdminPanel());
+    els.mobileAdminToggle?.addEventListener('click', () => { closeMobileMenu(); openAdminPanel(); });
+    document.querySelectorAll('.admin-tab').forEach(btn => btn.addEventListener('click', () => { state.adminTab = btn.dataset.adminTab; renderAdminPanel(); }));
     els.episodesSeasonSelect?.addEventListener('change', () => state.currentEpisodesSeries && renderEpisodesList(state.currentEpisodesSeries, els.episodesSeasonSelect.value));
     els.detailsEpisodesBtn?.addEventListener('click', () => state.currentDetails && state.currentDetails.type === 'Serie' && openEpisodesModal(state.currentDetails));
     els.detailsPlayBtn.addEventListener('click', () => {
       if (!state.currentDetails) return;
       const item = state.currentDetails;
       if (els.detailsPlayerWrap) els.detailsPlayerWrap.classList.remove('hidden');
-      playDetailsVideo(item.streamUrl || '');
+      playDetailsVideo(item.streamUrl || '', item);
       subscribeToRoom('details', item);
     });
     els.detailsSaveBtn.addEventListener('click', () => state.currentDetails && toggleMyList(state.currentDetails));
     els.profileMenuBtn.addEventListener('click', logout);
+    els.mobileProfileBtn?.addEventListener('click', () => { closeMobileMenu(); logout(); });
+    els.mobileMenuToggle?.addEventListener('click', openMobileMenu);
+    els.mobileMenuClose?.addEventListener('click', closeMobileMenu);
+    els.mobileMenuBackdrop?.addEventListener('click', closeMobileMenu);
+    els.mobileSearchToggle?.addEventListener('click', () => {
+      closeMobileMenu();
+      els.searchBar.classList.remove('hidden');
+      els.globalSearchInput.focus();
+    });
+    els.mobileConfigToggle?.addEventListener('click', () => { closeMobileMenu(); openConfigDrawer(); });
+    document.querySelectorAll('.mobile-nav-link').forEach(btn => btn.addEventListener('click', () => switchView(btn.dataset.view)));
     els.logoutAllBtn.addEventListener('click', () => { localStorage.removeItem(STORAGE.profile); localStorage.removeItem(STORAGE.myList); location.reload(); });
     document.querySelectorAll('.nav-link').forEach(btn => btn.addEventListener('click', () => switchView(btn.dataset.view)));
     els.searchToggle.addEventListener('click', () => { els.searchBar.classList.toggle('hidden'); if (!els.searchBar.classList.contains('hidden')) els.globalSearchInput.focus(); });
@@ -1129,8 +2051,53 @@
     els.configToggle.addEventListener('click', openConfigDrawer);
     els.closeConfigDrawer.addEventListener('click', closeConfigDrawer);
     els.resetLibraryBtn.addEventListener('click', resetLibrary);
+    renderEmojiPicker('live');
+    renderEmojiPicker('details');
+    els.liveEmojiToggle?.addEventListener('click', () => toggleEmojiPicker('live'));
+    els.detailsEmojiToggle?.addEventListener('click', () => toggleEmojiPicker('details'));
     els.liveChatForm.addEventListener('submit', async (e) => { e.preventDefault(); try { await sendChatMessage('live', els.liveChatInput.value); els.liveChatInput.value=''; } catch (err) { setChatStatus('live', `Nachricht konnte nicht gesendet werden: ${err.message}`, 'warn'); } });
     els.detailsChatForm.addEventListener('submit', async (e) => { e.preventDefault(); try { await sendChatMessage('details', els.detailsChatInput.value); els.detailsChatInput.value=''; } catch (err) { setChatStatus('details', `Nachricht konnte nicht gesendet werden: ${err.message}`, 'warn'); } });
+    [els.liveEmojiPicker, els.detailsEmojiPicker].forEach(picker => picker?.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-emoji]');
+      if (!btn) return;
+      insertEmoji(btn.dataset.scope, btn.dataset.emoji);
+      closeEmojiPickers();
+    }));
+    [els.liveChatMessages, els.detailsChatMessages].forEach(target => target?.addEventListener('click', async (e) => {
+      const btn = e.target.closest('[data-chat-action]');
+      if (!btn) return;
+      if (btn.dataset.chatAction === 'edit') await editChatMessage(btn.dataset.scope, btn.dataset.msgId);
+      if (btn.dataset.chatAction === 'delete') await deleteChatMessage(btn.dataset.scope, btn.dataset.msgId);
+    }));
+    els.adminPanelBody?.addEventListener('change', async (e) => {
+      const target = e.target;
+      if (target.id === 'adminContentType') { state.adminSelections.contentType = target.value; state.adminSelections.contentId = null; renderAdminPanel(); }
+      else if (target.id === 'adminContentItem') { state.adminSelections.contentId = target.value; renderAdminPanel(); }
+      else if (target.id === 'adminStreamType') { state.adminSelections.streamType = target.value; state.adminSelections.streamId = null; renderAdminPanel(); }
+      else if (target.id === 'adminStreamItem') { state.adminSelections.streamId = target.value; renderAdminPanel(); }
+      else if (target.matches('input[type="file"][data-target-input]')) { await handleAdminFileUpload(target); }
+    });
+    els.adminPanelBody?.addEventListener('click', async (e) => {
+      const jump = e.target.closest('[data-admin-jump]');
+      if (jump) { state.adminTab = jump.dataset.adminJump; renderAdminPanel(); return; }
+      const deleteUserBtn = e.target.closest('[data-delete-user]');
+      if (deleteUserBtn) { deleteAdminUser(deleteUserBtn.dataset.deleteUser); return; }
+      const clearRoomBtn = e.target.closest('[data-clear-room]');
+      if (clearRoomBtn) { clearAdminRoom(clearRoomBtn.dataset.clearRoom); return; }
+      if (e.target.id === 'adminDeleteContentBtn') { deleteSelectedAdminContent(); return; }
+      if (e.target.id === 'adminResetTextsBtn') { await resetAdminTexts(); return; }
+      if (e.target.id === 'adminQuickAccessSelectTopBtn') { setAdminQuickAccessTop(); return; }
+      if (e.target.id === 'adminQuickAccessClearBtn') { clearAdminQuickAccess(); return; }
+    });
+    els.adminPanelBody?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (e.target.id === 'adminEditContentForm') await saveEditedAdminContent();
+      else if (e.target.id === 'adminAddContentForm') await addAdminContent();
+      else if (e.target.id === 'adminStreamsForm') await saveAdminStreams();
+      else if (e.target.id === 'adminTextsForm') await saveAdminTexts();
+      else if (e.target.id === 'adminQuickAccessForm') await saveAdminQuickAccess();
+      else if (e.target.id === 'adminAddUserForm') await addAdminUser();
+    });
     els.loadM3uUrlBtn.addEventListener('click', () => importFromUrl(els.m3uUrlInput.value.trim(), applyLiveImport));
     els.loadEpgUrlBtn.addEventListener('click', () => importFromUrl(els.epgUrlInput.value.trim(), applyEpgImport));
     els.loadMoviesUrlBtn.addEventListener('click', () => importFromUrl(els.moviesUrlInput.value.trim(), applyMovieImport));
@@ -1139,14 +2106,17 @@
     els.epgFileInput.addEventListener('change', (e) => importFromFile(e.target.files[0], applyEpgImport));
     els.moviesFileInput.addEventListener('change', (e) => importFromFile(e.target.files[0], applyMovieImport));
     els.seriesFileInput.addEventListener('change', (e) => importFromFile(e.target.files[0], applySeriesImport));
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.chat-form')) closeEmojiPickers();
+    });
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') { if (!els.episodesModal?.classList.contains('hidden')) closeEpisodesModal(); else closeDetails(); els.passwordOverlay.classList.add('hidden'); closeConfigDrawer(); }
+      if (e.key === 'Escape') { if (!els.episodesModal?.classList.contains('hidden')) closeEpisodesModal(); else closeDetails(); els.passwordOverlay.classList.add('hidden'); closeConfigDrawer(); closeMobileMenu(); closeAdminPanel(); closeEmojiPickers(); }
     });
   }
 
-  window.addEventListener('beforeunload', clearHeroTimer);
+  window.addEventListener('beforeunload', () => { clearHeroTimer(); if (state.siteSync.unsub) { try { state.siteSync.unsub(); } catch {} } });
   enrich();
   renderProfiles();
   bindEvents();
-  if (state.activeProfile) enterApp();
+  if (state.activeProfile) enterApp().catch(err => console.error('EnterApp Fehler:', err));
 })();
