@@ -482,7 +482,7 @@ movies: [
     description: 'Die Brüder Mario und Luigi sowie Prinzessin Peach und Toad erleben ein neues Abenteuer. Geleitet von mysteriösen Sternkatapulten, reisen sie durch die Galaxie. Dabei landen sie auf verschiedenen Planeten, wo sie es mit einem neuen Gegner zu tun bekommen, aber auch auf neue Freunde treffen.',
     backdrop: 'https://static.spreeradio.de/img/7411/1622153/254000/Img_2_1/800/smf.webp',
     logo: 'https://www.universalpictures.at/tl_files/content/movies/super_mario_bros_2/posters/01.jpg',
-    streamUrl: 'https://cdn-skbjnxouspvjfe76.edgeon-bandwidth.com/engine/hls2-c/01/16904/ptla1bwufklo_,n,.urlset/index-v1-a1.m3u8?t=_t0FDl0SxpCh9exnNvw6Ar3uHUHd-aKGCS0zzEn2YHs&s=1775519809&e=14400&f=84520864&node=hg7PGsGVZYOY68f6mOhvXMWx8eV9vWM5f+Mfj7RSTc8=&i=95.223&sp=2500&asn=3209&q=n&rq=fW3aV1UcqS32n9edBMtB8FUjQiWrm5Y4eiLo2K5t'
+    streamUrl: 'https://fsaf12.s1q2105.com/hls/rozDYqWlXpBe1weMVEqps0qcNu0MLPRG/master.m3u8?token=6233bcdf8c3834eaaf638dfe1acf411f-1775639057-2a02%3A8071%3A5cc1%3Acea0%3A40bf%3A1b32%3Af5a3%3A3b1b-b5830eac07b16c5853b4913a1c004ecbe65d4521bbff4ab55c5a107da5ec8990'
   },
     {
       id: 'movie-2',
@@ -496,7 +496,7 @@ movies: [
       description: 'Das findet man am besten heraus, wenn man selbst zum Tier wird. Tierfreundin Mabel hat als Biber äußerst überraschende Erkenntnisse. Aber anstatt sich an die Regeln zu halten, stellt sie die natürliche Ordnung völlig auf den Kopf und zettelt einen tierischen Aufstand an. Und das nur, weil sie unbedingt den Teich retten will.',
       backdrop: 'https://disney.images.edge.bamgrid.com/ripcut-delivery/v2/variant/disney/27cda596-b160-4562-a788-ef81c3f88971/compose?format=webp',
       logo: 'https://kkiste-io.skin/uploads/thumb/271x408-0-75/2026-03/1774530696_np3omywggljnv5v1oqsmuso6ytd.jpg',
-      streamUrl: 'https://cdn-utzguzfstc6qeiys.edgeon-bandwidth.com/engine/hls2-c/01/16839/gzxmx0xeg9tw_,n,.urlset/index-v1-a1.m3u8?t=yqdkJ88n5w7JKEBM_2xsIuNtazDRIGvFqyAFlPQfOUY&s=1775570089&e=14400&f=84198008&node=FvLLQmFLPprhIaaK7QxxW1GPH4U48RVkH2s8+1QkG/U=&i=95.223&sp=2500&asn=3209&q=n&rq=rTxQ0b7L5PI6dCbcXG2ILn4y7JbwFEy1s7jBGAjY',
+      streamUrl: 'https://fsaf12.s1q2105.com/hls/zV2wn7s0l3EFshiXnzljd9TrpZ3SM7xw/index_2586x1080.m3u8?token=af8b31553402390d90fbf57f0c9baf5b-1775639272-2a02%3A8071%3A5cc1%3Acea0%3A40bf%3A1b32%3Af5a3%3A3b1b-8c42bc6440cf269edc0e2a1b3732c32ad6a9cff39cdfe1c0d930d19f03150044',
     },
     {
       id: 'movie-3',
@@ -510,7 +510,7 @@ movies: [
       description: 'Im Birmingham der 1940er-Jahre herrscht Krieg und die Spannungen im Land wachsen. Tommy Shelby lebt im Exil und hat versucht, seine Vergangenheit hinter sich zu lassen. Doch als das Wohl seiner Familie und seines Landes bedroht wird, bleibt ihm keine Wahl mehr. Alte Geister holen ihn ein, und die Verantwortung, der er entkommen wollte, wartet erneut auf ihn. Nun muss er sich entscheiden, ob er sich seinem Erbe stellen oder es endgültig zerstören will.',
       backdrop: 'https://occ-0-8407-2218.1.nflxso.net/dnm/api/v6/6AYY37jfdO6hpXcMjf9Yu5cnmO0/AAAABYbgdzjUUThqG93YDrGpnsS7Sbv4zVLQh1NeUFY30D102ROMqiCeZRds5zDbmywtfVSpwZ-OQYaT7JpD0itTrV6KiPBDl2v-y0br.jpg',
       logo: 'https://kkiste-io.skin/uploads/thumb/271x408-0-75/2026-03/1774006048_79misxas5mp0yo2a3ln5yemymnw.jpg',
-      streamUrl: 'https://cdn-kjx4wmys82vaf5ot.edgeon-bandwidth.com/engine/hls2-c/01/16154/uvpagomaw4hi_,n,.urlset/index-v1-a1.m3u8?t=V8q-xCjp_162rjNJF9Hs_LJjgrq8d9S8efuQ7DNMvRg&s=1775572215&e=14400&f=80772088&node=3XyL9ThD9+Y33uW0lP0558J3jB+pUeDNB2x/RukRShY=&i=95.223&sp=2500&asn=3209&q=n&rq=rTxQ0b7L5PI6dCbcXG2ILn4y7JbwFEy1s7jBGAjY'
+      streamUrl: 'https://181rtfg1.s1q2105.com/hls/0t7rPIRFFoxXs8b6ocbPVqMWlDoJksfS/index_2378x1080.m3u8?token=599a5bf8b52d487e3042cfdd26d68d49-1775639354-2a02%3A8071%3A5cc1%3Acea0%3A40bf%3A1b32%3Af5a3%3A3b1b-2caec2b64a3f16d2fb07ad468ad8fab982f380b0da775d8ea8396461d1a6ff71'
     },
     {
       id: 'movie-4',
@@ -524,7 +524,7 @@ movies: [
       description: 'Nachdem sie von ihrer ersten Weltraummission zurückgekehrt ist, wird die Astronautin Sam Walker von der NASA in einem Hochsicherheits-Haus untergebracht, um rehabilitiert und medizinisch untersucht zu werden. Doch als auf dem Gelände zunehmend beunruhigende Ereignisse auftreten, fürchtet sie, dass etwas Außerirdisches ihr zurück zur Erde gefolgt sein könnte.',
       backdrop: 'https://images.justwatch.com/backdrop/337315217/s640/the-astronaut.jpg',
       logo: 'https://kkiste-io.skin/uploads/thumb/271x408-0-75/2025-12/1766846506_souvvkjhyhztc1uqz8levuija3j.jpg',
-      streamUrl: 'https://cdn-thliixidzdaessdj.edgeon-bandwidth.com/engine/hls2-c/01/16788/uazp7m8uyusm_,n,.urlset/index-v1-a1.m3u8?t=ZPqbW2AynpUVJI5FswJ1qMxeZHBJorXLSkwsKybeUJQ&s=1775571677&e=14400&f=83943700&node=pWqV+ZPoqtprtyEAwyk0jtcBRJ1E7KKdFvCtlEKJqAw=&i=95.223&sp=2500&asn=3209&q=n&rq=rTxQ0b7L5PI6dCbcXG2ILn4y7JbwFEy1s7jBGAjY'
+      streamUrl: 'https://ugc-cdn-caching-n32q9szkwxe3xq5x6z.cloudwindow-route.com/engine/hls2/01/16154/uvpagomaw4hi_,n,.urlset/index-v1-a1.m3u8?t=X-rpcf1qdPjgubTCr0couNB3v09_UMgAAZc5oARzGjs&s=1775610775&e=14400&f=80772088&node=3XyL9ThD9+Y33uW0lP0558J3jB+pUeDNB2x/RukRShY=&i=92.208&sp=2500&asn=3209&q=n&rq=ly1MIphYYviNxjlDVLyYM86qr1vMtoep1toOhXll'
     },
     {
       id: 'movie-5',
@@ -538,7 +538,7 @@ movies: [
       description: 'Als ein mächtiger Troll erwacht, gerät Norwegen ins Chaos. Nora (Ine Marie Wilmann), Andreas (Kim Falck) und Kapitän Kris (Mads Sjøgård Pettersen) stehen vor ihrer bislang gefährlichsten Mission. Um die zerstörerische Kreatur aufzuhalten, müssen sie neue Verbündete gewinnen, mächtige Waffen finden und tief in die alte norwegische Geschichte eintauchen. Doch können sie die gewaltigen Herausforderungen meistern, bevor ihr Land ins Verderben stürzt?',
       backdrop: 'https://www.heavenofhorror.com/wp-content/uploads/2025/12/Troll-2-Netflix-Sequel-Review.jpg',
       logo: 'https://kkiste-io.skin/uploads/thumb/271x408-0-75/2025-12/1764589808_8s5hofbmjiehubwa8cpae05p9hx.jpg',
-      streamUrl: 'https://cdn-wiytxu35mq1nktzw.edgeon-bandwidth.com/engine/hls2/01/15952/zk7y7ktv7izs_,n,.urlset/index-v1-a1.m3u8?t=tfxsVt5j9gTsLXpC_4RwdorY2OvimKiTan8WyX8ZY1I&s=1775573941&e=14400&f=79764271&node=J5VCNxAvP+5uhy5fz6YcfCbWnOO02P+Fhn8aluaxz/o=&i=95.223&sp=2500&asn=3209&q=n&rq=rTxQ0b7L5PI6dCbcXG2ILn4y7JbwFEy1s7jBGAjY'
+      streamUrl: 'https://ugc-cdn-caching-n3wiytxu35mq1nktzw.cloudwindow-route.com/engine/hls2/01/15952/zk7y7ktv7izs_,n,.urlset/index-v1-a1.m3u8?t=UbMsABg5mLbJEU-Q0CWF0pEAmGVKCYjrryqEMz2DQRE&s=1775610847&e=14400&f=79764271&node=J5VCNxAvP+5uhy5fz6YcfCbWnOO02P+Fhn8aluaxz/o=&i=92.208&sp=2500&asn=3209&q=n&rq=ly1MIphYYviNxjlDVLyYM86qr1vMtoep1toOhXll'
     }
   ],
 
