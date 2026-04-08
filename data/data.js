@@ -34,7 +34,7 @@ window.UNREAL_DATA = {
       group: 'Entertainment',
       logo: 'DAS',
       logoUrl: 'https://epg.pw/media/images/epg/2025/04/08/20250408022937912681_77.png',
-      streamUrl: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8',
+      streamUrl: 'https://s6.hopslan.com/ardX/tracks-v1a1/mono.m3u8',
       epg: [
         { start: '18:00', end: '19:30', title: 'Evening Showcase' },
         { start: '19:30', end: '21:00', title: 'Action Night Special' },
