@@ -1,12 +1,12 @@
 window.UNREAL_DATA = {
   accounts: [
-    { username: 'Admin', password: '555', avatar: 'assets/avatar-admin.svg', color: '#d62828' },
-    { username: 'Volkan', password: '63450', avatar: 'assets/avatar-volkan.svg', color: '#f4a261' },
+    { username: 'Admin', password: '63450', avatar: 'assets/avatar-admin.svg', color: '#d62828' },
     { username: 'Amur', password: '63450', avatar: 'assets/avatar-amur.svg', color: '#2a9d8f' },
     { username: 'Aviano', password: '63450', avatar: 'assets/avatar-aviano.svg', color: '#577590' },
     { username: 'Alessia', password: '63450', avatar: 'assets/avatar-alessia.svg', color: '#b5179e' },
-    { username: 'Gesu', password: '1402', avatar: 'assets/avatar-gesu.png', color: '#fc2be4' }
-    { username: 'Mano', password: 'Anissa100', avatar: 'assets/avatar-mano.svg', color: '#6a4c93' }
+    { username: 'Volkan', password: '63450', avatar: 'assets/avatar-volkan.svg', color: '#f4a261' },
+    { username: 'Gesu', password: '63450', avatar: 'assets/avatar-gesu.png', color: '#fc2be4' },
+    { username: 'Mano', password: 'Anissa100', avatar: 'assets/avatar-Mano.svg', color: '#6a4c93' },
   ],
 
     // =========================================================
