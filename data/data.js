@@ -1,6 +1,6 @@
 window.UNREAL_DATA = {
   accounts: [
-    { username: 'Admin', password: '63450', avatar: 'assets/avatar-admin.svg', color: '#d62828' },
+    { username: 'Admin', password: '63450', avatar: 'assets/avatar-admin.svg', color: '#d62828', isAdmin: true },
     { username: 'Amur', password: '63450', avatar: 'assets/avatar-amur.svg', color: '#2a9d8f' },
     { username: 'Aviano', password: '63450', avatar: 'assets/avatar-aviano.svg', color: '#577590' },
     { username: 'Alessia', password: '63450', avatar: 'assets/avatar-alessia.svg', color: '#b5179e' },

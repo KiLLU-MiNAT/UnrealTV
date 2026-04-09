@@ -50,7 +50,7 @@
 
   const $ = (id) => document.getElementById(id);
   const els = {
-    loginScreen: $('loginScreen'), appScreen: $('appScreen'), profileGrid: $('profileGrid'),
+    introSplash: $('introSplash'), loginScreen: $('loginScreen'), appScreen: $('appScreen'), profileGrid: $('profileGrid'),
     passwordOverlay: $('passwordOverlay'), closePasswordOverlay: $('closePasswordOverlay'),
     selectedProfileAvatar: $('selectedProfileAvatar'), selectedProfileName: $('selectedProfileName'),
     passwordInput: $('passwordInput'), enterAppBtn: $('enterAppBtn'), loginMessage: $('loginMessage'),
@@ -418,6 +418,18 @@ function syncBuiltinLiveChannels() {
 
   function enrich() {
     ensurePlaceholderContent();
+    state.accounts = safeArr(state.accounts).map((account, i) => {
+      const username = account?.username || `Profil ${i+1}`;
+      return {
+        ...account,
+        username,
+        password: account?.password || '',
+        avatar: account?.avatar || 'assets/avatar-admin.svg',
+        color: account?.color || '#e50914',
+        isAdmin: account?.isAdmin === true || String(username).toLowerCase() === 'admin'
+      };
+    });
+    persistAccounts();
     state.liveChannels = safeArr(state.liveChannels).map((ch, i) => {
       const normalizedSources = normalizeLiveSources(ch);
       const firstSource = normalizedSources[0] || null;
@@ -518,6 +530,19 @@ function syncBuiltinLiveChannels() {
   }
   function setStatus(msg, tone='info') { if (els.importStatus) { els.importStatus.textContent = msg; els.importStatus.className = `import-status ${tone}`; } }
   function escapeHtml(value='') { return String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+  function playIntroSplash() {
+    const splash = els.introSplash;
+    if (!splash) return;
+    document.body.classList.add('intro-active');
+    window.setTimeout(() => splash.classList.add('is-animating'), 40);
+    window.setTimeout(() => splash.classList.add('is-fading'), 1500);
+    window.setTimeout(() => {
+      splash.classList.add('hidden');
+      document.body.classList.remove('intro-active');
+    }, 2050);
+  }
+
   function formatTime(dt) {
     try { return new Intl.DateTimeFormat('de-DE',{hour:'2-digit',minute:'2-digit'}).format(dt instanceof Date ? dt : new Date(dt)); }
     catch { return '--:--'; }
@@ -554,7 +579,7 @@ function syncBuiltinLiveChannels() {
   }
 
   function isAdminProfile(profile = state.activeProfile) {
-    return !!(profile && String(profile.username || '').toLowerCase() === 'admin');
+    return !!(profile && (profile.isAdmin === true || String(profile.username || '').toLowerCase() === 'admin'));
   }
 
   function updateAdminAccess() {
@@ -614,7 +639,7 @@ function syncBuiltinLiveChannels() {
   async function enterApp() {
     syncBuiltinLiveChannels();
     initChatBackend();
-    await initSiteSync();
+ // await initSiteSync();
     els.loginScreen.classList.add('hidden');
     els.appScreen.classList.remove('hidden');
     updateActiveProfileUI();
@@ -711,11 +736,8 @@ function syncBuiltinLiveChannels() {
           </div>
           <p class="hero-description">${escapeHtml(f.subtitle || '')}</p>
           <p class="hero-description">${escapeHtml(f.description || '')}</p>
-          <div class="hero-actions">
-            <button class="primary-btn" id="heroOpenImport">Listen importieren</button>
-          </div>
+          <div class="hero-actions"></div>
         </div>`;
-      document.getElementById('heroOpenImport')?.addEventListener('click', openConfigDrawer);
       return;
     }
 
@@ -734,13 +756,20 @@ function syncBuiltinLiveChannels() {
         <div class="hero-actions">
           <button class="primary-btn" id="heroPlayTitle">Abspielen</button>
           <button class="ghost-btn" id="heroSaveTitle">${inList ? 'Aus meiner Liste entfernen' : 'Zu meiner Liste'}</button>
-          <button class="ghost-btn" id="heroPauseBtn">${state.heroPaused ? 'Slideshow starten' : 'Slideshow pausieren'}</button>
-          <button class="ghost-btn" id="heroOpenImport">Listen importieren</button>
         </div>
         <div class="hero-slider-controls">
           <button class="hero-nav-btn" id="heroPrevBtn" aria-label="Vorheriger Titel">‹</button>
-          <div class="hero-dots">
-            ${items.map((_, i) => `<button class="hero-dot ${i === state.heroIndex ? 'active' : ''}" data-hero-index="${i}" aria-label="Slide ${i+1}"></button>`).join('')}
+          <div class="hero-dots-wrap">
+            <div class="hero-dots hero-dots-left">
+              ${items.slice(0, Math.ceil(items.length / 2)).map((_, i) => `<button class="hero-dot ${i === state.heroIndex ? 'active' : ''}" data-hero-index="${i}" aria-label="Slide ${i+1}"></button>`).join('')}
+            </div>
+            <button class="ghost-btn hero-icon-btn hero-pause-inline" id="heroPauseBtn" aria-label="${state.heroPaused ? 'Slideshow starten' : 'Slideshow pausieren'}" title="${state.heroPaused ? 'Slideshow starten' : 'Slideshow pausieren'}"><span aria-hidden="true">${state.heroPaused ? '▶' : '❚❚'}</span></button>
+            <div class="hero-dots hero-dots-right">
+              ${items.slice(Math.ceil(items.length / 2)).map((_, offset) => {
+                const i = offset + Math.ceil(items.length / 2);
+                return `<button class="hero-dot ${i === state.heroIndex ? 'active' : ''}" data-hero-index="${i}" aria-label="Slide ${i+1}"></button>`;
+              }).join('')}
+            </div>
           </div>
           <button class="hero-nav-btn" id="heroNextBtn" aria-label="Nächster Titel">›</button>
         </div>
@@ -759,7 +788,6 @@ function syncBuiltinLiveChannels() {
       renderHeroSlide(state.heroIndex);
     });
     document.getElementById('heroPauseBtn')?.addEventListener('click', () => setHeroPaused(!state.heroPaused));
-    document.getElementById('heroOpenImport')?.addEventListener('click', openConfigDrawer);
     document.getElementById('heroPrevBtn')?.addEventListener('click', () => renderHeroSlide(state.heroIndex - 1));
     document.getElementById('heroNextBtn')?.addEventListener('click', () => renderHeroSlide(state.heroIndex + 1));
     els.heroSection.querySelectorAll('[data-hero-index]').forEach(btn => btn.addEventListener('click', () => renderHeroSlide(Number(btn.dataset.heroIndex))));
@@ -2045,7 +2073,11 @@ function renderAdminContentTab() {
         <div class="admin-list-card">
           <h3>Profile & Nutzer</h3>
           <div class="admin-list">
-            ${state.accounts.map(account => `<div class="admin-list-item"><div class="admin-user-chip"><img src="${escapeHtml(account.avatar || 'assets/avatar-admin.svg')}" alt="${escapeHtml(account.username)}" /><div><strong>${escapeHtml(account.username)}</strong><div class="admin-list-meta">Passwort: ${escapeHtml(account.password || '—')}</div></div></div>${String(account.username).toLowerCase() !== 'admin' ? `<button type="button" class="ghost-btn admin-danger" data-delete-user="${escapeHtml(account.username)}">Löschen</button>` : '<span class="badge">Admin</span>'}</div>`).join('')}
+            ${state.accounts.map(account => {
+              const fixedAdmin = String(account.username).toLowerCase() === 'admin';
+              const hasAdmin = account.isAdmin === true || fixedAdmin;
+              return `<div class="admin-list-item"><div class="admin-user-chip"><img src="${escapeHtml(account.avatar || 'assets/avatar-admin.svg')}" alt="${escapeHtml(account.username)}" /><div><strong>${escapeHtml(account.username)}</strong><div class="admin-list-meta">Passwort: ${escapeHtml(account.password || '—')}</div></div></div><div class="admin-user-actions">${hasAdmin ? '<span class="badge">Admin</span>' : ''}${!fixedAdmin ? `<button type="button" class="ghost-btn" data-toggle-admin="${escapeHtml(account.username)}">${hasAdmin ? 'Admin entfernen' : 'Als Admin setzen'}</button><button type="button" class="ghost-btn admin-danger" data-delete-user="${escapeHtml(account.username)}">Löschen</button>` : ''}</div></div>`;
+            }).join('')}
           </div>
         </div>
         <form id="adminAddUserForm" class="admin-form">
@@ -2274,7 +2306,7 @@ function renderAdminPanel() {
     const color = document.getElementById('adminNewColor')?.value.trim() || '#e50914';
     if (!username || !password) return alert('Bitte Benutzername und Passwort angeben.');
     if (state.accounts.some(account => String(account.username).toLowerCase() === username.toLowerCase())) return alert('Dieser Benutzer existiert bereits.');
-    state.accounts = [...state.accounts, { username, password, avatar, color }];
+    state.accounts = [...state.accounts, { username, password, avatar, color, isAdmin: false }];
     persistAccounts();
     renderProfiles();
     renderAdminPanel();
@@ -2288,6 +2320,26 @@ function renderAdminPanel() {
     if (!confirm(`Profil ${username} löschen?`)) return;
     state.accounts = state.accounts.filter(account => account.username !== username);
     persistAccounts();
+    renderProfiles();
+    renderAdminPanel();
+    saveRemoteSiteState();
+  }
+
+  function toggleAdminUser(username) {
+    if (!username || String(username).toLowerCase() === 'admin') return;
+    state.accounts = state.accounts.map(account => {
+      if (account.username !== username) return account;
+      return { ...account, isAdmin: !(account.isAdmin === true) };
+    });
+    persistAccounts();
+    if (state.activeProfile?.username === username) {
+      const refreshed = state.accounts.find(account => account.username === username);
+      if (refreshed) {
+        state.activeProfile = refreshed;
+        saveJson(STORAGE.profile, state.activeProfile);
+        updateActiveProfileUI();
+      }
+    }
     renderProfiles();
     renderAdminPanel();
     saveRemoteSiteState();
@@ -2538,6 +2590,8 @@ function initChatBackend() {
       if (jump) { state.adminTab = jump.dataset.adminJump; renderAdminPanel(); return; }
       const deleteUserBtn = e.target.closest('[data-delete-user]');
       if (deleteUserBtn) { deleteAdminUser(deleteUserBtn.dataset.deleteUser); return; }
+      const toggleAdminBtn = e.target.closest('[data-toggle-admin]');
+      if (toggleAdminBtn) { toggleAdminUser(toggleAdminBtn.dataset.toggleAdmin); return; }
       const clearRoomBtn = e.target.closest('[data-clear-room]');
       if (clearRoomBtn) { clearAdminRoom(clearRoomBtn.dataset.clearRoom); return; }
       if (e.target.id === 'adminDeleteContentBtn') { deleteSelectedAdminContent(); return; }
@@ -2574,6 +2628,7 @@ function initChatBackend() {
   window.addEventListener('beforeunload', clearHeroTimer);
   enrich();
   renderProfiles();
+  playIntroSplash();
   bindEvents();
   if (state.activeProfile) enterApp().catch(err => console.error('EnterApp Fehler:', err));
 })();

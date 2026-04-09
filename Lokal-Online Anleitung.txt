@@ -1,0 +1,19 @@
+Variante A: Firestore-Dokument löschen
+
+In Firebase Console:
+
+Firestore Database
+Collection: ''unrealtv_site_state''
+Dokument: ''main'' löschen
+
+Danach:
+
+Lokal mit deinen richtigen Daten starten
+''await initSiteSync();'' wieder aktivieren
+Seite neu laden
+Im Admin Panel eine kleine Änderung machen und speichern
+
+Dann wird main neu aus deinem aktuellen lokalen Stand aufgebaut.
+
+- ASUKOMMENTIERT (Danach nur Lokal nicht Online)
+    // await initSiteSync();
