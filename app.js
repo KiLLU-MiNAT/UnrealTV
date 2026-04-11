@@ -641,7 +641,7 @@ function syncBuiltinLiveChannels() {
   async function enterApp() {
     syncBuiltinLiveChannels();
     initChatBackend();
- // await initSiteSync();
+    await initSiteSync();
     els.loginScreen.classList.add('hidden');
     els.appScreen.classList.remove('hidden');
     updateActiveProfileUI();
