@@ -29,8 +29,8 @@
     watchHistory: [],
     continueWatching: [],
     recommendations: [],
-    textOverrides: readJson(STORAGE.texts, {}),
-    quickAccessSettings: readJson(STORAGE.quickAccessSettings, { limit: 4 }),
+    textOverrides: readJson(STORAGE.texts, defaults.textOverrides || {}),
+    quickAccessSettings: readJson(STORAGE.quickAccessSettings, defaults.quickAccessSettings || { limit: 4 }),
     currentView: 'home',
     currentLive: null,
     currentLiveSourceIndex: 0,
@@ -43,9 +43,11 @@
     currentChatRoom: { live: null, details: null },
     chat: { mode: 'demo', firestore: null, unsubscribers: { live: null, details: null }, reason: 'Demo-Modus aktiv.' },
     siteSync: { enabled: false, firestore: null, unsub: null, applyingRemote: false, lastRemoteHash: '' },
+    localSync: { dataFileHandle: null, lastWriteAt: 0, supported: !!window.showSaveFilePicker },
     genreBrowser: { type: 'Film', genre: '' },
     adminTab: 'overview',
-    adminSelections: { contentType: 'live', contentId: null, streamType: 'live', streamId: null, chatRoom: null }
+    adminSelections: { contentType: 'live', contentId: null, streamType: 'live', streamId: null, chatRoom: null },
+    livePlaybackWatch: { interval: null, cleanup: null, switching: false, lastAdvanceAt: 0, lastTime: -1 }
   };
 
   const $ = (id) => document.getElementById(id);
@@ -639,7 +641,7 @@ function syncBuiltinLiveChannels() {
   async function enterApp() {
     syncBuiltinLiveChannels();
     initChatBackend();
-    await initSiteSync();
+ // await initSiteSync();
     els.loginScreen.classList.add('hidden');
     els.appScreen.classList.remove('hidden');
     updateActiveProfileUI();
@@ -1028,9 +1030,88 @@ function stopBackgroundPlayback() {
     closeMobileMenu();
   }
 
+
+  function clearLivePlaybackWatchdog() {
+    const watch = state.livePlaybackWatch || {};
+    if (watch.interval) { try { clearInterval(watch.interval); } catch {} }
+    if (typeof watch.cleanup === 'function') { try { watch.cleanup(); } catch {} }
+    state.livePlaybackWatch = { interval: null, cleanup: null, switching: false, lastAdvanceAt: 0, lastTime: -1 };
+  }
+
+  function switchToNextLiveSource(reason = 'stall') {
+    const channel = state.currentLive;
+    const sources = safeArr(channel?.sources);
+    const currentIndex = Math.max(0, Number(state.currentLiveSourceIndex) || 0);
+    if (!channel || sources.length <= 1 || currentIndex >= sources.length - 1 || state.livePlaybackWatch?.switching) return false;
+    state.livePlaybackWatch.switching = true;
+    setStatus(`Quelle ${(sources[currentIndex]?.label || `Stream ${currentIndex + 1}`)} reagiert nicht stabil – wechsle zu ${sources[currentIndex + 1]?.label || `Stream ${currentIndex + 2}`}.`, 'warn');
+    setTimeout(() => {
+      state.livePlaybackWatch.switching = false;
+      selectLiveChannel(channel.id, currentIndex + 1);
+    }, 80);
+    return true;
+  }
+
+  function setupLivePlaybackWatchdog(video, channel) {
+    clearLivePlaybackWatchdog();
+    if (!video || !channel) return;
+    const sources = safeArr(channel.sources);
+    if (sources.length <= 1) return;
+
+    const watch = state.livePlaybackWatch;
+    watch.lastTime = Number(video.currentTime) || 0;
+    watch.lastAdvanceAt = Date.now();
+
+    const markAdvance = () => {
+      watch.lastTime = Number(video.currentTime) || 0;
+      watch.lastAdvanceAt = Date.now();
+    };
+
+    const onWaiting = () => {
+      if (!video.paused && !video.ended) {
+        watch.lastAdvanceAt = Math.min(watch.lastAdvanceAt || Date.now(), Date.now() - 3100);
+      }
+    };
+
+    const onError = () => switchToNextLiveSource('error');
+
+    ['playing', 'canplay', 'timeupdate', 'loadeddata'].forEach(evt => video.addEventListener(evt, markAdvance));
+    ['waiting', 'stalled', 'suspend'].forEach(evt => video.addEventListener(evt, onWaiting));
+    video.addEventListener('error', onError);
+
+    watch.cleanup = () => {
+      ['playing', 'canplay', 'timeupdate', 'loadeddata'].forEach(evt => video.removeEventListener(evt, markAdvance));
+      ['waiting', 'stalled', 'suspend'].forEach(evt => video.removeEventListener(evt, onWaiting));
+      video.removeEventListener('error', onError);
+    };
+
+    watch.interval = setInterval(() => {
+      if (state.currentView !== 'live' || state.currentLive?.id !== channel.id || state.livePlaybackWatch?.switching) return;
+      if (video.paused || video.ended || video.seeking) return;
+
+      const currentTime = Number(video.currentTime) || 0;
+      const advanced = currentTime > (watch.lastTime + 0.08);
+
+      if (advanced) {
+        watch.lastTime = currentTime;
+        watch.lastAdvanceAt = Date.now();
+        return;
+      }
+
+      const readyState = Number(video.readyState || 0);
+      const elapsed = Date.now() - (watch.lastAdvanceAt || Date.now());
+
+      if ((readyState <= 2 || video.networkState === 2 || video.networkState === 3) && elapsed >= 3000) {
+        switchToNextLiveSource('stall');
+      }
+    }, 500);
+  }
+
   function resetVideoElement(video) {
     if (!video) return;
+    if (video === els.livePlayer) clearLivePlaybackWatchdog();
     if (video._hls) { try { video._hls.destroy(); } catch {} video._hls = null; }
+    if (video._mpegts) { try { video._mpegts.destroy(); } catch {} video._mpegts = null; }
     try { video.pause(); } catch {}
     video.removeAttribute('src');
     try { video.load(); } catch {}
@@ -1048,7 +1129,9 @@ function stopBackgroundPlayback() {
       video.controls = true;
       video.playsInline = true;
       video.setAttribute('playsinline', '');
+      video.preload = 'auto';
       video.poster = 'assets/live-poster.svg';
+      video.preload = 'auto';
       els.livePlayerHost.innerHTML = '';
       els.livePlayerHost.appendChild(video);
       els.livePlayer = video;
@@ -1071,6 +1154,7 @@ function stopBackgroundPlayback() {
       video.controls = true;
       video.playsInline = true;
       video.setAttribute('playsinline', '');
+      video.preload = 'auto';
       els.detailsPlayerHost.innerHTML = '';
       els.detailsPlayerHost.appendChild(video);
       els.detailsPlayer = video;
@@ -1119,6 +1203,9 @@ function stopBackgroundPlayback() {
       || /urlset/i.test(normalizedUrl)
       || /master(\.m3u8)?($|\?)/i.test(normalizedUrl)
       || /index[-_a-z0-9]*(\.m3u8)?($|\?)/i.test(normalizedUrl);
+    const looksLikeTs = /(?:\.ts)($|\?)/i.test(normalizedUrl)
+      || /(?:extension=ts)(&|$)/i.test(normalizedUrl)
+      || /(?:format=mpegts|format=ts)(&|$)/i.test(normalizedUrl);
 
     if (window.Hls && window.Hls.isSupported() && looksLikeHls) {
       const hls = new Hls();
@@ -1126,14 +1213,58 @@ function stopBackgroundPlayback() {
       hls.attachMedia(video);
       video._hls = hls;
       hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
-    } else {
-      video.src = normalizedUrl;
-      video.load?.();
-      video.play().catch(() => {});
+      return;
     }
+
+    if (window.mpegts && window.mpegts.getFeatureList?.().mseLivePlayback && window.mpegts.isSupported() && looksLikeTs) {
+      const player = window.mpegts.createPlayer({
+        type: 'mpegts',
+        isLive: true,
+        url: normalizedUrl
+      }, {
+        enableWorker: true,
+        lazyLoad: false,
+        liveBufferLatencyChasing: true,
+        liveBufferLatencyMaxLatency: 5,
+        liveBufferLatencyMinRemain: 1,
+        autoCleanupSourceBuffer: true,
+        autoCleanupMaxBackwardDuration: 60,
+        autoCleanupMinBackwardDuration: 30,
+        stashInitialSize: 768,
+        deferLoadAfterSourceOpen: false
+      });
+      player.attachMediaElement(video);
+      player.load();
+      video._mpegts = player;
+      try {
+        video.preload = 'auto';
+        video.muted = false;
+      } catch {}
+      video.play().catch(() => {});
+
+      try {
+        player.on(window.mpegts.Events.ERROR, () => {});
+        player.on(window.mpegts.Events.STATISTICS_INFO, (stats) => {
+          const decoded = Number(stats?.decodedFrames || 0);
+          const dropped = Number(stats?.droppedFrames || 0);
+          if (decoded > 0 && dropped > decoded * 0.08) {
+            try { player.unload(); } catch {}
+            try { player.load(); } catch {}
+            video.play().catch(() => {});
+          }
+        });
+      } catch {}
+
+      return;
+    }
+
+    video.src = normalizedUrl;
+    video.load?.();
+    video.play().catch(() => {});
   }
 
   function playVideo(url, channel = null, source = null) {
+    clearLivePlaybackWatchdog();
     const embedValue = source?.embedCode || source?.embed || source?.iframe || channel?.embedCode || channel?.embed || channel?.iframe || '';
     if (embedValue) {
       showEmbeddedLiveStream(embedValue);
@@ -1141,6 +1272,7 @@ function stopBackgroundPlayback() {
     }
     resetLivePlayerHost();
     playMedia(els.livePlayer, url);
+    setupLivePlaybackWatchdog(els.livePlayer, channel);
   }
 
   function showEmbeddedDetailsStream(embedValue) {
@@ -1178,25 +1310,161 @@ function stopBackgroundPlayback() {
     return safeArr(ch.epg)[0] || null;
   }
 
-  function renderChannels(filter='') {
+  
+  const LIVE_CATEGORY_ORDER = ['TV', 'Kinder', 'Sport', 'Filme', 'Anderes'];
+
+  function normalizeLiveMainCategory(value = '', channelName = '') {
+    const hay = `${value} ${channelName}`.toLowerCase();
+    if (/(kids?|kinder|cartoon|toons?|junior|nick|disney|boomerang|family)/i.test(hay)) return 'Kinder';
+    if (/(sport|sports|bundesliga|fussball|football|soccer|nba|nfl|ufc|wwe|boxing|fight|tennis|golf|motorsport|racing|formula|sky sport|dazn|espn)/i.test(hay)) return 'Sport';
+    if (/(movie|movies|film|filme|cinema|kino|action|drama|thriller|horror|comedy|romance)/i.test(hay)) return 'Filme';
+    if (/(tv|unterhaltung|entertainment|series|serie|news|music|doku|documentary|wissen|show|reality|general|live)/i.test(hay)) return 'TV';
+    return 'Anderes';
+  }
+
+  function buildLiveCategoryMap(channels = []) {
+    const map = {};
+    LIVE_CATEGORY_ORDER.forEach(cat => { map[cat] = []; });
+    channels.forEach(channel => {
+      const mainCategory = normalizeLiveMainCategory(channel.group || '', channel.name || '');
+      map[mainCategory].push(channel);
+    });
+    return map;
+  }
+
+  function ensureLiveCategoryState() {
+    if (!state.liveCategoryOpen || typeof state.liveCategoryOpen !== 'object') {
+      state.liveCategoryOpen = { TV: true, Kinder: false, Sport: false, Filme: false, Anderes: false };
+    }
+    LIVE_CATEGORY_ORDER.forEach(cat => {
+      if (typeof state.liveCategoryOpen[cat] !== 'boolean') state.liveCategoryOpen[cat] = false;
+    });
+  }
+
+  function ensureActiveLiveCategoryVisible(channel = state.currentLive) {
+    ensureLiveCategoryState();
+    const activeCategory = normalizeLiveMainCategory(channel?.group || '', channel?.name || '');
+    // Nur die aktive Kategorie öffnen, aber den manuellen Zustand der anderen Kategorien nicht überschreiben.
+    // So kann der Nutzer Kategorien frei öffnen und wieder schließen.
+    if (activeCategory) state.liveCategoryOpen[activeCategory] = true;
+  }
+
+  function renderChannelListMarkup(channels = []) {
+    ensureLiveCategoryState();
+    const categoryMap = buildLiveCategoryMap(channels);
+    return LIVE_CATEGORY_ORDER.map(category => {
+      const items = categoryMap[category] || [];
+      const isOpen = !!state.liveCategoryOpen[category];
+      return `
+        <section class="channel-category ${isOpen ? 'open' : ''}">
+          <button type="button" class="channel-category-toggle" data-channel-category="${escapeHtml(category)}" aria-expanded="${isOpen ? 'true' : 'false'}">
+            <span>${escapeHtml(category)}</span>
+            <strong>${items.length}</strong>
+          </button>
+          <div class="channel-category-body" ${isOpen ? '' : 'hidden'}>
+            ${items.length ? items.map(ch => `
+              <button class="channel-item ${state.currentLive && state.currentLive.id === ch.id ? 'active' : ''}" data-id="${escapeHtml(ch.id)}">
+                <div class="channel-logo">${ch.logoUrl ? `<img src="${escapeHtml(ch.logoUrl)}" alt="${escapeHtml(ch.name)}" />` : escapeHtml(ch.logo)}</div>
+                <div class="channel-info">
+                  <strong>${escapeHtml(ch.name)}</strong>
+                  <span>${escapeHtml(ch.group || category)}</span>
+                </div>
+              </button>`).join('') : '<div class="channel-empty">Keine Sender in dieser Kategorie.</div>'}
+          </div>
+        </section>`;
+    }).join('');
+  }
+
+  function injectChannelCategoryStyles() {
+    if (document.getElementById('liveCategoryStyles')) return;
+    const style = document.createElement('style');
+    style.id = 'liveCategoryStyles';
+    style.textContent = `
+      .channel-category { border: 1px solid rgba(255,255,255,0.06); border-radius: 18px; background: rgba(255,255,255,0.025); overflow: hidden; margin-bottom: 10px; }
+      .channel-category-toggle { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; background: rgba(255,255,255,0.03); color: #fff; border: 0; padding: 14px 16px; cursor: pointer; font: inherit; font-weight: 700; }
+      .channel-category-toggle span { display: inline-flex; align-items: center; gap: 10px; }
+      .channel-category-toggle span::before { content: '▸'; display: inline-block; transition: transform .18s ease; opacity: .9; }
+      .channel-category.open .channel-category-toggle span::before { transform: rotate(90deg); }
+      .channel-category-toggle strong { font-size: 12px; line-height: 1; padding: 7px 9px; border-radius: 999px; background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.88); }
+      .channel-category-body { padding: 10px; display: grid; gap: 10px; }
+      .channel-category-body[hidden] { display: none !important; }
+      .channel-empty { padding: 12px; border-radius: 14px; background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.66); font-size: 14px; }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function serializeDataJs() {
+    const payload = {
+      accounts: state.accounts,
+      featured: defaults.featured || {},
+      liveChannels: state.liveChannels,
+      movies: state.movies,
+      series: state.series,
+      textOverrides: state.textOverrides,
+      quickAccessSettings: state.quickAccessSettings
+    };
+    return `window.UNREAL_DATA = ${JSON.stringify(payload, null, 2)};\n`;
+  }
+
+  async function connectLocalDataFile() {
+    if (!window.showSaveFilePicker) {
+      alert('Direktes Schreiben in data.js wird von diesem Browser hier nicht unterstützt. Nutze Chrome oder Edge über http://localhost.');
+      return;
+    }
+    try {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: 'data.js',
+        types: [{ description: 'JavaScript', accept: { 'text/javascript': ['.js'] } }]
+      });
+      state.localSync.dataFileHandle = handle;
+      setStatus('data.js verbunden. Künftige Admin-Änderungen können direkt lokal geschrieben werden.', 'success');
+      await writeLocalDataFile(false);
+    } catch (err) {
+      if (err && err.name === 'AbortError') return;
+      console.error('Lokale data.js Verbindung fehlgeschlagen:', err);
+      setStatus(`data.js konnte nicht verbunden werden: ${err.message || 'Unbekannter Fehler'}`, 'warn');
+    }
+  }
+
+  async function writeLocalDataFile(showSuccess = true) {
+    const handle = state.localSync?.dataFileHandle;
+    if (!handle) {
+      if (showSuccess) setStatus('Noch keine data.js verbunden. Nutze zuerst „data.js verbinden“.', 'warn');
+      return false;
+    }
+    try {
+      const writable = await handle.createWritable();
+      await writable.write(serializeDataJs());
+      await writable.close();
+      state.localSync.lastWriteAt = Date.now();
+      if (showSuccess) setStatus('data.js lokal aktualisiert.', 'success');
+      return true;
+    } catch (err) {
+      console.error('Lokales Schreiben von data.js fehlgeschlagen:', err);
+      setStatus(`data.js konnte nicht geschrieben werden: ${err.message || 'Unbekannter Fehler'}`, 'warn');
+      return false;
+    }
+  }
+
+function renderChannels(filter='') {
+    injectChannelCategoryStyles();
     const q = String(filter || '').trim().toLowerCase();
     const channels = state.liveChannels.filter(ch => !q || `${ch.name} ${ch.group}`.toLowerCase().includes(q));
-    els.channelList.innerHTML = channels.map(ch => `
-      <button class="channel-item ${state.currentLive && state.currentLive.id === ch.id ? 'active' : ''}" data-id="${escapeHtml(ch.id)}">
-        <div class="channel-logo">${ch.logoUrl ? `<img src="${escapeHtml(ch.logoUrl)}" alt="${escapeHtml(ch.name)}" />` : escapeHtml(ch.logo)}</div>
-        <div class="channel-info">
-          <strong>${escapeHtml(ch.name)}</strong>
-          <span>${escapeHtml(ch.group)}</span>
-        </div>
-      </button>`).join('');
+    els.channelList.innerHTML = renderChannelListMarkup(channels);
     els.channelCount.textContent = `${channels.length} Sender`;
     els.channelList.querySelectorAll('.channel-item').forEach(btn => btn.addEventListener('click', () => selectLiveChannel(btn.dataset.id)));
+    els.channelList.querySelectorAll('[data-channel-category]').forEach(btn => btn.addEventListener('click', () => {
+      const category = btn.dataset.channelCategory;
+      state.liveCategoryOpen[category] = !state.liveCategoryOpen[category];
+      renderChannels(q);
+    }));
   }
 
   function selectLiveChannel(id, sourceIndex = 0) {
     const channel = state.liveChannels.find(ch => ch.id === id) || state.liveChannels[0];
     if (!channel) return;
     state.currentLive = channel;
+    ensureActiveLiveCategoryVisible(channel);
     const sources = safeArr(channel.sources);
     state.currentLiveSourceIndex = Math.min(Math.max(Number(sourceIndex) || 0, 0), Math.max(sources.length - 1, 0));
     const activeSource = getActiveLiveSource(channel);
@@ -1885,6 +2153,11 @@ function ensureAdminSelection(typeKey, idKey) {
             <button type="button" class="ghost-btn" data-admin-jump="streams">Stream URLs ändern</button>
             <button type="button" class="ghost-btn" data-admin-jump="texts">Website-Texte ändern</button>
           </div>
+          <div class="admin-help" style="margin-top:14px;">Lokales data.js Schreiben funktioniert in Chrome/Edge über <code>http://localhost</code>. Einmal verbinden, danach werden Admin-Änderungen zusätzlich direkt in deine <code>data/data.js</code> geschrieben.</div>
+          <div class="admin-actions" style="margin-top:12px;">
+            <button type="button" class="ghost-btn" id="adminConnectLocalDataBtn">data.js verbinden</button>
+            <button type="button" class="ghost-btn" id="adminWriteLocalDataBtn">data.js jetzt schreiben</button>
+          </div>
         </div>
       </div>`;
   }
@@ -2011,24 +2284,22 @@ function renderAdminContentTab() {
           <input id="adminBackdropUrl" value="${escapeHtml(item.backdrop || item.artwork || '')}" />
           <input type="file" id="adminBackdropUpload" data-target-input="adminBackdropUrl" accept="image/*" />
           ${type === 'live' ? `<label for="adminLiveGroup">Sender-Kategorie</label><input id="adminLiveGroup" value="${escapeHtml(item.group || '')}" /><label for="adminLiveLogoUrl">Sender-Logo URL</label><input id="adminLiveLogoUrl" value="${escapeHtml(item.logoUrl || '')}" /><label class="admin-check"><input id="adminLiveQuickAccess" type="checkbox" ${item.quickAccess ? 'checked' : ''} /> <span>Im Schnellzugriff auf der Home-Seite anzeigen</span></label><label for="adminLiveEpg">EPG (eine Zeile: Start|Ende|Titel)</label><textarea id="adminLiveEpg">${escapeHtml(epgText)}</textarea>` : ''}
-          ${type !== 'live' ? `
-            <div class="admin-source-grid">
-              ${Array.from({ length: 3 }, (_, index) => {
-                const source = mediaSources[index] || {};
-                return `
-                  <div class="admin-source-card">
-                    <h4>Streamquelle ${index + 1}</h4>
-                    <label for="adminMediaSourceLabel${index + 1}">Label</label>
-                    <input id="adminMediaSourceLabel${index + 1}" value="${escapeHtml(source.label || `Stream ${index + 1}`)}" />
-                    <label for="adminMediaSourceUrl${index + 1}">Stream URL</label>
-                    <input id="adminMediaSourceUrl${index + 1}" value="${escapeHtml(source.streamUrl || '')}" placeholder="https://...m3u8 oder mp4" />
-                    <label for="adminMediaSourceEmbed${index + 1}">Embed / Iframe</label>
-                    <textarea id="adminMediaSourceEmbed${index + 1}" placeholder="Optionaler Embed Code">${escapeHtml(source.embed || source.embedCode || source.iframe || '')}</textarea>
-                  </div>
-                `;
-              }).join('')}
-            </div>
-          ` : ''}
+          <div class="admin-source-grid">
+            ${Array.from({ length: 3 }, (_, index) => {
+              const source = mediaSources[index] || {};
+              return `
+                <div class="admin-source-card">
+                  <h4>Streamquelle ${index + 1}</h4>
+                  <label for="adminMediaSourceLabel${index + 1}">Label</label>
+                  <input id="adminMediaSourceLabel${index + 1}" value="${escapeHtml(source.label || `Stream ${index + 1}`)}" />
+                  <label for="adminMediaSourceUrl${index + 1}">Stream URL</label>
+                  <input id="adminMediaSourceUrl${index + 1}" value="${escapeHtml(source.streamUrl || '')}" placeholder="${type === 'live' ? 'https://...m3u8, ts oder mpd' : 'https://...m3u8 oder mp4'}" />
+                  <label for="adminMediaSourceEmbed${index + 1}">Embed / Iframe</label>
+                  <textarea id="adminMediaSourceEmbed${index + 1}" placeholder="Optionaler Embed Code">${escapeHtml(source.embed || source.embedCode || source.iframe || '')}</textarea>
+                </div>
+              `;
+            }).join('')}
+          </div>
           <div class="admin-actions"><button type="submit" class="primary-btn">Streams speichern</button></div>
         ` : '<div class="admin-empty">Kein Eintrag vorhanden.</div>'}
       </form>`;
@@ -2236,21 +2507,25 @@ function renderAdminPanel() {
     const list = getCollectionByType(type).map(entry => {
       if (entry.id !== id) return entry;
       const base = { ...entry, streamUrl: document.getElementById('adminStreamUrl')?.value.trim() || '', embed: document.getElementById('adminStreamEmbed')?.value.trim() || '', embedCode: document.getElementById('adminStreamEmbed')?.value.trim() || '', logo: document.getElementById('adminLogoUrl')?.value.trim() || entry.logo, backdrop: document.getElementById('adminBackdropUrl')?.value.trim() || entry.backdrop };
-      if (type !== 'live') {
-        const mediaSources = Array.from({ length: 3 }, (_, index) => {
-          const label = document.getElementById(`adminMediaSourceLabel${index + 1}`)?.value.trim() || `Stream ${index + 1}`;
-          const streamUrl = document.getElementById(`adminMediaSourceUrl${index + 1}`)?.value.trim() || '';
-          const embed = document.getElementById(`adminMediaSourceEmbed${index + 1}`)?.value.trim() || '';
-          if (!streamUrl && !embed) return null;
-          return { id: `${entry.id}-source-${index + 1}`, label, streamUrl, embed, embedCode: embed, iframe: embed };
-        }).filter(Boolean);
+      const mediaSources = Array.from({ length: 3 }, (_, index) => {
+        const label = document.getElementById(`adminMediaSourceLabel${index + 1}`)?.value.trim() || `Stream ${index + 1}`;
+        const streamUrl = document.getElementById(`adminMediaSourceUrl${index + 1}`)?.value.trim() || '';
+        const embed = document.getElementById(`adminMediaSourceEmbed${index + 1}`)?.value.trim() || '';
+        if (!streamUrl && !embed) return null;
+        return { id: `${entry.id}-source-${index + 1}`, label, streamUrl, embed, embedCode: embed, iframe: embed };
+      }).filter(Boolean);
+
+      if (mediaSources.length) {
         base.sources = mediaSources;
         const firstSource = mediaSources[0] || null;
         base.streamUrl = firstSource?.streamUrl || '';
         base.embed = firstSource?.embed || '';
         base.embedCode = firstSource?.embedCode || '';
         base.iframe = firstSource?.iframe || '';
+      } else {
+        base.sources = [];
       }
+
       if (type === 'live') {
         base.artwork = document.getElementById('adminBackdropUrl')?.value.trim() || entry.artwork || entry.backdrop;
         base.group = document.getElementById('adminLiveGroup')?.value.trim() || entry.group;
@@ -2260,7 +2535,12 @@ function renderAdminPanel() {
           const [start, end, ...title] = line.split('|');
           return { start: (start || '').trim(), end: (end || '').trim(), title: title.join('|').trim() || 'Programm' };
         });
-        base.sources = normalizeLiveSources({ ...base, sources: [{ label: 'Stream 1', streamUrl: base.streamUrl, embed: base.embed }] });
+        base.sources = normalizeLiveSources(base);
+        const firstSource = base.sources[0] || null;
+        base.streamUrl = firstSource?.streamUrl || '';
+        base.embed = firstSource?.embed || '';
+        base.embedCode = firstSource?.embedCode || '';
+        base.iframe = firstSource?.iframe || '';
       }
       return base;
     });
@@ -2475,6 +2755,7 @@ function renderAdminPanel() {
       selectLiveChannel(openLiveId);
     }
     await saveRemoteSiteState();
+    if (state.localSync?.dataFileHandle) await writeLocalDataFile(false);
     if (message && alertUser) alert(message);
   }
 
@@ -2598,6 +2879,8 @@ function initChatBackend() {
       if (e.target.id === 'adminResetTextsBtn') { resetAdminTexts(); return; }
       if (e.target.id === 'adminQuickAccessSelectTopBtn') { setAdminQuickAccessTop(); return; }
       if (e.target.id === 'adminQuickAccessClearBtn') { clearAdminQuickAccess(); return; }
+      if (e.target.id === 'adminConnectLocalDataBtn') { connectLocalDataFile(); return; }
+      if (e.target.id === 'adminWriteLocalDataBtn') { writeLocalDataFile(true); return; }
     });
     els.adminPanelBody?.addEventListener('submit', (e) => {
       e.preventDefault();
